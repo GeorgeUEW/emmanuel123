@@ -516,6 +516,16 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 .topbar-menu svg { width: 17px; height: 17px; }
 @media (max-width: 900px) { .topbar-menu { display: flex; } }
 
+/* Burger → X morph */
+.burger-icon line {
+  transform-origin: center;
+  transition: transform .35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity .25s ease;
+}
+.nav-open .burger-top    { transform: translateY(6px) rotate(45deg); }
+.nav-open .burger-mid    { opacity: 0; transform: scaleX(0); }
+.nav-open .burger-bottom { transform: translateY(-6px) rotate(-45deg); }
+
 .topbar-title {
   font-size: .88rem;
   font-weight: 700;
@@ -1348,40 +1358,50 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   .shell { grid-template-columns: 0 1fr; }
   .shell.nav-open { grid-template-columns: 0 1fr; }
 
-  /* ── Full-screen premium mobile drawer ── */
+  /* ── Sidebar drawer ── */
   .sidebar {
     position: fixed;
     left: 0; top: 0;
     height: 100vh;
     width: 82vw;
-    max-width: 320px;
-    transform: translateX(-105%);
-    transition: transform .32s cubic-bezier(.22,.68,0,1.2);
+    max-width: 300px;
+    transform: translateX(-100%);
+    transition: transform .35s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow .35s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
     z-index: 600;
     border-right: none;
-    border-radius: 0 24px 24px 0;
+    border-radius: 0 20px 20px 0;
     box-shadow: none;
     background: var(--surface);
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
   }
   .shell.nav-open .sidebar {
     transform: translateX(0);
-    box-shadow: 8px 0 60px rgba(0,0,0,.22), 2px 0 12px rgba(0,0,0,.1);
+    box-shadow: 12px 0 48px rgba(0,0,0,.18), 2px 0 8px rgba(0,0,0,.08);
   }
 
-  /* Backdrop */
-  .shell.nav-open::before {
+  /* Backdrop — smooth fade, no animation conflicts */
+  .shell::before {
     content: '';
     position: fixed; inset: 0;
-    background: rgba(0,0,0,.55);
+    background: rgba(0,0,0,0);
     z-index: 599;
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-    animation: fadeIn .22s ease;
+    pointer-events: none;
+    transition: background .35s cubic-bezier(0.4, 0, 0.2, 1),
+                backdrop-filter .35s ease;
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
   }
-  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  .shell.nav-open::before {
+    background: rgba(0,0,0,.50);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    pointer-events: all;
+  }
 
   /* ── Mobile drawer header — dark branded hero ── */
   .sidebar-brand {
@@ -2026,8 +2046,10 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   <!-- TOPBAR -->
   <header class="topbar">
     <button class="topbar-menu" id="menu-btn" aria-label="Menu">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+      <svg class="burger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line class="burger-top"    x1="3" y1="6"  x2="21" y2="6"/>
+        <line class="burger-mid"    x1="3" y1="12" x2="21" y2="12"/>
+        <line class="burger-bottom" x1="3" y1="18" x2="21" y2="18"/>
       </svg>
     </button>
     <span class="topbar-title" id="topbar-title">Dashboard</span>
