@@ -517,11 +517,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 @media (max-width: 900px) { .topbar-menu { display: flex; } }
 
 /* Burger → X morph */
-.burger-icon line {
-  transform-origin: center;
-  transition: transform .22s cubic-bezier(0.25, 0, 0, 1),
-              opacity .18s ease;
-}
+.burger-icon line { transform-origin: center; }
 .nav-open .burger-top    { transform: translateY(6px) rotate(45deg); }
 .nav-open .burger-mid    { opacity: 0; transform: scaleX(0); }
 .nav-open .burger-bottom { transform: translateY(-6px) rotate(-45deg); }
@@ -1366,8 +1362,6 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     width: 82vw;
     max-width: 300px;
     transform: translateX(-100%);
-    transition: transform .22s cubic-bezier(0.25, 0, 0, 1),
-                box-shadow .22s ease;
     will-change: transform;
     z-index: 600;
     border-right: none;
@@ -1384,16 +1378,13 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     box-shadow: 12px 0 48px rgba(0,0,0,.18), 2px 0 8px rgba(0,0,0,.08);
   }
 
-  /* Backdrop — synced with drawer speed */
+  /* Backdrop — instant */
   .shell::before {
     content: '';
     position: fixed; inset: 0;
     background: rgba(0,0,0,0);
     z-index: 599;
     pointer-events: none;
-    transition: background .22s ease;
-    backdrop-filter: blur(0px);
-    -webkit-backdrop-filter: blur(0px);
   }
   .shell.nav-open::before {
     background: rgba(0,0,0,.50);
@@ -1405,7 +1396,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   /* ── Mobile drawer header — dark branded hero ── */
   .sidebar-brand {
     height: auto;
-    background: var(--t1);
+    background: #1a1a2e;
     border-bottom: none;
     padding: 1.5rem 1.25rem 1.25rem;
     flex-direction: column;
