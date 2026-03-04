@@ -1439,8 +1439,9 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 [data-theme="dark"] .month-hl { background: rgba(249,115,22,.07) !important; }
 
 /* Mobile-only sidebar elements — hidden on desktop */
-.sb-close, .sb-user-card, .sb-logout-btn { display: none; }
+.sb-close, .sb-user-card, .sb-logout-btn { display: none !important; }
 @media (max-width: 900px) {
+  .sb-close, .sb-user-card, .sb-logout-btn { display: flex !important; }
   :root { --sidebar-w: 0px; }
   .shell { grid-template-columns: 0 1fr; }
   .shell.nav-open { grid-template-columns: 0 1fr; }
