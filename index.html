@@ -2,17 +2,16 @@
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
-<!-- Kill any stale service worker caches and force fresh load -->
+<!-- Clear stale SW caches once, no reload loop -->
 <script>
-if('serviceWorker' in navigator){
+if('serviceWorker' in navigator && !sessionStorage.getItem('sw_cleared')){
   navigator.serviceWorker.getRegistrations().then(function(regs){
     if(regs.length > 0){
+      sessionStorage.setItem('sw_cleared','1');
       Promise.all(regs.map(function(r){ return r.unregister(); }))
         .then(function(){ return caches.keys(); })
         .then(function(keys){ return Promise.all(keys.map(function(k){ return caches.delete(k); })); })
         .then(function(){ window.location.reload(true); });
-    } else {
-      caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); });
     }
   });
 }
