@@ -56,51 +56,51 @@ if('serviceWorker' in navigator && !sessionStorage.getItem('sw_cleared')){
 :root {
   --f: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* ── Brand: Orange & Black ── */
-  --brand:        #F97316;
-  --brand-dk:     #EA580C;
-  --brand-dkr:    #C2410C;
-  --brand-lt:     #FFF7ED;
-  --brand-lt2:    #FFEDD5;
-  --brand-mid:    #FB923C;
-  --brand-glow:   rgba(249,115,22,.15);
+  /* ── Brand: Orange (refined, deeper) ── */
+  --brand:        #E8600A;
+  --brand-dk:     #C94F06;
+  --brand-dkr:    #A33E04;
+  --brand-lt:     #FEF3E8;
+  --brand-lt2:    #FDE3C8;
+  --brand-mid:    #F07520;
+  --brand-glow:   rgba(232,96,10,.12);
 
-  /* ── Surfaces ── */
-  --bg:           #F5F5F5;
+  /* ── Surfaces: warm white, not cold grey ── */
+  --bg:           #F2F3F5;
   --surface:      #FFFFFF;
-  --surface-2:    #FAFAFA;
-  --surface-3:    #F0F0F0;
-  --surface-4:    #E8E8E8;
+  --surface-2:    #F8F8F9;
+  --surface-3:    #EFEFEF;
+  --surface-4:    #E5E6E8;
 
-  /* ── Borders ── */
-  --border:       #E4E4E7;
-  --border-2:     #D1D1D6;
+  /* ── Borders: subtle, not stark ── */
+  --border:       #E0E1E5;
+  --border-2:     #C8C9CE;
 
-  /* ── Text ── */
-  --t1:           #09090B;
-  --t2:           #18181B;
-  --t3:           #52525B;
-  --t4:           #A1A1AA;
-  --t5:           #D4D4D8;
+  /* ── Text: ink-based, not pure black ── */
+  --t1:           #111318;
+  --t2:           #1E2128;
+  --t3:           #4B505C;
+  --t4:           #9298A4;
+  --t5:           #C8CBD2;
 
-  /* ── Semantic colors ── */
-  --petrol:       #0EA5E9;
-  --petrol-bg:    #F0F9FF;
-  --petrol-bdr:   #BAE6FD;
-  --diesel:       #10B981;
-  --diesel-bg:    #ECFDF5;
-  --diesel-bdr:   #A7F3D0;
-  --danger:       #EF4444;
-  --danger-bg:    #FEF2F2;
-  --danger-bdr:   #FECACA;
-  --warn:         #F59E0B;
-  --warn-bg:      #FFFBEB;
-  --warn-bdr:     #FDE68A;
-  --info:         #6366F1;
-  --info-bg:      #EEF2FF;
-  --info-bdr:     #C7D2FE;
-  --success:      #22C55E;
-  --success-bg:   #F0FDF4;
+  /* ── Semantic: desaturated, professional ── */
+  --petrol:       #0077B6;
+  --petrol-bg:    #EEF6FC;
+  --petrol-bdr:   #B6D9F0;
+  --diesel:       #1A7F5A;
+  --diesel-bg:    #EAF7F1;
+  --diesel-bdr:   #A3D9C0;
+  --danger:       #C0392B;
+  --danger-bg:    #FBECEA;
+  --danger-bdr:   #F0B9B4;
+  --warn:         #B8780A;
+  --warn-bg:      #FDF5E4;
+  --warn-bdr:     #F0D79A;
+  --info:         #2C4A8F;
+  --info-bg:      #EBF0FA;
+  --info-bdr:     #B0C2E8;
+  --success:      #1A7F5A;
+  --success-bg:   #EAF7F1;
 
   /* ── Layout ── */
   --sidebar-w:    248px;
@@ -126,36 +126,36 @@ if('serviceWorker' in navigator && !sessionStorage.getItem('sw_cleared')){
 
 /* ── DARK MODE ── */
 [data-theme="dark"] {
-  --bg:           #0A0A0A;
-  --surface:      #111111;
-  --surface-2:    #161616;
-  --surface-3:    #1C1C1C;
-  --surface-4:    #242424;
-  --border:       #252525;
-  --border-2:     #333333;
-  --t1:           #FAFAFA;
-  --t2:           #E4E4E7;
-  --t3:           #A1A1AA;
-  --t4:           #52525B;
-  --t5:           #27272A;
-  --brand-lt:     #1C0D02;
-  --brand-lt2:    #2A1205;
-  --petrol-bg:    #0C1E2A;
-  --petrol-bdr:   #1A3D55;
-  --diesel-bg:    #0A1F14;
-  --diesel-bdr:   #1A4030;
-  --danger-bg:    #1F0A0A;
-  --danger-bdr:   #4A1515;
-  --warn-bg:      #1F1600;
-  --warn-bdr:     #4A3500;
-  --info-bg:      #10102A;
-  --info-bdr:     #2A2A5A;
-  --shadow-xs:    0 1px 2px rgba(0,0,0,.3);
-  --shadow-sm:    0 1px 3px rgba(0,0,0,.4);
-  --shadow:       0 4px 6px rgba(0,0,0,.4);
-  --shadow-md:    0 8px 16px rgba(0,0,0,.5);
-  --shadow-lg:    0 16px 32px rgba(0,0,0,.6);
-  --shadow-xl:    0 24px 48px rgba(0,0,0,.7);
+  --bg:           #0D0F12;
+  --surface:      #14171C;
+  --surface-2:    #1A1E24;
+  --surface-3:    #20252D;
+  --surface-4:    #282E38;
+  --border:       #2A2F3A;
+  --border-2:     #373D4A;
+  --t1:           #F0F1F3;
+  --t2:           #D8DBE0;
+  --t3:           #8E94A0;
+  --t4:           #4E5460;
+  --t5:           #2A2F3A;
+  --brand-lt:     #1E1208;
+  --brand-lt2:    #2C1A0A;
+  --petrol-bg:    #081622;
+  --petrol-bdr:   #0E2E44;
+  --diesel-bg:    #081A12;
+  --diesel-bdr:   #0E3222;
+  --danger-bg:    #1C0C0A;
+  --danger-bdr:   #3E1610;
+  --warn-bg:      #1A1204;
+  --warn-bdr:     #3A280A;
+  --info-bg:      #09101E;
+  --info-bdr:     #162040;
+  --shadow-xs:    0 1px 2px rgba(0,0,0,.4);
+  --shadow-sm:    0 1px 3px rgba(0,0,0,.5);
+  --shadow:       0 4px 6px rgba(0,0,0,.5);
+  --shadow-md:    0 8px 16px rgba(0,0,0,.6);
+  --shadow-lg:    0 16px 32px rgba(0,0,0,.7);
+  --shadow-xl:    0 24px 48px rgba(0,0,0,.8);
 }
 
 /* ══ RESET ══ */
