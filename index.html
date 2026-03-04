@@ -2644,7 +2644,7 @@ class App {
     const d=this.user.display||this.user.username;
     document.getElementById('user-chip-name').textContent=d;
     document.getElementById('user-av').textContent=F.init(d);
-    this._updateTopbarAvatar();
+    this._refreshTopbar();
     document.documentElement.setAttribute('data-theme',DB.get('_theme','light'));
     this._bind(); this._fillSelects(); this._initRange(); this.nav('dashboard');
   }
@@ -3334,15 +3334,26 @@ class App {
   }
 
   saveProfile(){
-    const display=document.getElementById('s-display').value.trim(), username=document.getElementById('s-username').value.trim().toLowerCase();
+    const display=document.getElementById('s-display').value.trim();
+    const username=document.getElementById('s-username').value.trim().toLowerCase();
     if(!display||!username){ this.toast('Name and username required','error'); return; }
-    let users=DB.get('_users',[{username:'admin',password:'emmanuel2024',display:'Emmanuel Admin'}]);
+    let users=DB.get('_users',[{username:'admin',password:'emmanuel2024',display:'Emmanuel Admin',role:'admin',createdAt:'System'}]);
+    // Save pending avatar if any
+    if(this._pendingAvatar!==undefined){
+      const avs=DB.get('_avatars',{});
+      if(this._pendingAvatar) avs[this.user.username]=this._pendingAvatar;
+      else delete avs[this.user.username];
+      DB.set('_avatars',avs);
+      this._pendingAvatar=undefined;
+    }
     users=users.map(u=>u.username===this.user.username?{...u,display,username}:u);
-    DB.set('_users',users); this.user={...this.user,display,username}; sessionStorage.setItem('_sess',JSON.stringify(this.user));
-    document.getElementById('user-chip-name').textContent=display; document.getElementById('user-av').textContent=F.init(display);
-    this._audit('settings',`Profile updated`,`Username: ${username}, Display: ${display}`); this.toast('Profile saved');
+    DB.set('_users',users);
+    this.user={...this.user,display,username};
+    sessionStorage.setItem('_sess',JSON.stringify(this.user));
+    this._refreshTopbar();
+    this._audit('settings','Profile updated',`Display: ${display}, Username: ${username}`);
+    this.toast('Profile saved');
   }
-
   savePass(){
     const oldP=document.getElementById('s-old').value, newP=document.getElementById('s-new').value, cnfP=document.getElementById('s-cnf').value;
     const err=document.getElementById('s-perr'), users=DB.get('_users',[{username:'admin',password:'emmanuel2024',display:'Emmanuel Admin'}]);
@@ -3461,6 +3472,138 @@ class App {
   }
 
   /* ── SMS NOTIFICATIONS ── */
+  /* ── TOPBAR AVATAR REFRESH ── */
+  _refreshTopbar(){
+    const avs=DB.get('_avatars',{}), img=avs[this.user?.username];
+    const el=document.getElementById('user-av');
+    if(!el) return;
+    if(img){ el.innerHTML=`<img src="${img}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`; }
+    else { el.textContent=F.init(this.user?.display||this.user?.username||'?'); }
+    const nameEl=document.getElementById('user-chip-name');
+    if(nameEl) nameEl.textContent=this.user?.display||this.user?.username||'';
+  }
+
+  /* ── PROFILE PICTURE ── */
+  _loadAvatarPreview(){
+    const avs=DB.get('_avatars',{}), img=avs[this.user?.username];
+    const wrap=document.getElementById('av-preview-wrap');
+    const nameEl=document.getElementById('av-name-label');
+    if(!wrap) return;
+    if(nameEl) nameEl.textContent=this.user?.display||'Your Profile';
+    if(img){ wrap.innerHTML=`<img src="${img}" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-md)"/>`; }
+    else { wrap.innerHTML=`<div class="avatar-preview-placeholder" style="background:${av(this.user?.display||'U')}">${F.init(this.user?.display||'U')}</div>`; }
+    this._pendingAvatar=undefined;
+  }
+
+  _loadAvatarFile(file){
+    if(file.size>4*1024*1024){ this.toast('Image too large — max 4 MB','error'); return; }
+    const reader=new FileReader();
+    reader.onload=e=>{
+      this._resizeAvatar(e.target.result, 200, resized=>{
+        this._pendingAvatar=resized;
+        const wrap=document.getElementById('av-preview-wrap');
+        if(wrap) wrap.innerHTML=`<img src="${resized}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-md)"/>`;
+        this.toast('Photo ready — click Save Profile to apply');
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  _resizeAvatar(dataUrl, size, cb){
+    const img=new Image();
+    img.onload=()=>{
+      const c=document.createElement('canvas');
+      c.width=c.height=size;
+      const ctx=c.getContext('2d');
+      const s=Math.min(img.width,img.height);
+      ctx.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,size,size);
+      cb(c.toDataURL('image/jpeg',0.85));
+    };
+    img.src=dataUrl;
+  }
+
+  _removeAvatar(){
+    this._pendingAvatar=null;
+    const wrap=document.getElementById('av-preview-wrap');
+    if(wrap) wrap.innerHTML=`<div class="avatar-preview-placeholder" style="background:${av(this.user?.display||'U')}">${F.init(this.user?.display||'U')}</div>`;
+    this.toast('Photo removed — save to confirm');
+  }
+
+  /* ── CAMERA ── */
+  openCamera(){
+    this._camFacing='user'; this._camStream=null;
+    const m=document.getElementById('m-camera'); if(!m) return;
+    m.style.display='flex';
+    document.getElementById('cam-live-view').style.display='';
+    document.getElementById('cam-preview-view').style.display='none';
+    document.getElementById('cam-error').style.display='none';
+    this._startCamera();
+  }
+
+  async _startCamera(){
+    if(this._camStream){ this._camStream.getTracks().forEach(t=>t.stop()); this._camStream=null; }
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:this._camFacing,width:{ideal:640},height:{ideal:640}},audio:false});
+      this._camStream=stream;
+      const v=document.getElementById('cam-video');
+      v.srcObject=stream; v.play();
+    }catch(e){
+      const lv=document.getElementById('cam-live-view'), ce=document.getElementById('cam-error');
+      if(lv) lv.style.display='none'; if(ce) ce.style.display='';
+    }
+  }
+
+  _flipCamera(){ this._camFacing=this._camFacing==='user'?'environment':'user'; this._startCamera(); }
+
+  _snapPhoto(){
+    const v=document.getElementById('cam-video'), c=document.getElementById('cam-canvas');
+    if(!v||!c) return;
+    const size=Math.min(v.videoWidth,v.videoHeight)||300;
+    c.width=c.height=size;
+    c.getContext('2d').drawImage(v,(v.videoWidth-size)/2,(v.videoHeight-size)/2,size,size,0,0,size,size);
+    const dataUrl=c.toDataURL('image/jpeg',0.85);
+    const pi=document.getElementById('cam-preview-img'); if(pi) pi.src=dataUrl;
+    const lv=document.getElementById('cam-live-view'), pv=document.getElementById('cam-preview-view');
+    if(lv) lv.style.display='none'; if(pv) pv.style.display='';
+  }
+
+  _retakePhoto(){
+    const lv=document.getElementById('cam-live-view'), pv=document.getElementById('cam-preview-view');
+    if(pv) pv.style.display='none'; if(lv) lv.style.display='';
+  }
+
+  _usePhoto(){
+    const pi=document.getElementById('cam-preview-img'); if(!pi) return;
+    this._resizeAvatar(pi.src, 200, resized=>{
+      this._pendingAvatar=resized;
+      const wrap=document.getElementById('av-preview-wrap');
+      if(wrap) wrap.innerHTML=`<img src="${resized}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-md)"/>`;
+      this.closeCamera();
+      this.toast('Photo captured — click Save Profile to apply');
+    });
+  }
+
+  closeCamera(){
+    if(this._camStream){ this._camStream.getTracks().forEach(t=>t.stop()); this._camStream=null; }
+    const m=document.getElementById('m-camera'); if(m) m.style.display='none';
+  }
+
+  async sendTestSMS(){
+    const s=DB.get('_sms',{});
+    const result=document.getElementById('sms-result');
+    if(!s.clientId||!s.clientSecret||!s.phone){
+      result.textContent='⚠️ Fill in Client ID, Client Secret and phone number first.';
+      result.className='sms-result fail show'; return;
+    }
+    result.textContent='Sending test SMS via Hubtel…'; result.className='sms-result ok show';
+    const tmp=s.enabled; s.enabled=true; DB.set('_sms',s);
+    const sent=await this._sendSMS("✅ Test from Emmanuel's Fuel Station. Hubtel SMS is working!",s.phone);
+    s.enabled=tmp; DB.set('_sms',s);
+    result.textContent=sent?'✅ Test SMS sent successfully!':'❌ Failed. Check your Hubtel credentials and wallet balance.';
+    result.className=sent?'sms-result ok show':'sms-result fail show';
+    setTimeout(()=>result.classList.remove('show'),8000);
+  }
+
   _loadSMSSettings(){
     const s=DB.get('_sms',{enabled:false,clientId:'',clientSecret:'',sender:'',phone:'',onSale:true,onLow:true,onUser:true});
     document.getElementById('sms-api-user').value=s.clientId||'';
