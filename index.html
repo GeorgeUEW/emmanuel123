@@ -565,6 +565,46 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   letter-spacing: -.02em;
   margin-right: auto;
 }
+/* Desktop topbar brand */
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+.topbar-logo {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(249,115,22,.2), 0 2px 8px rgba(249,115,22,.15);
+}
+.topbar-brand-text { line-height: 1.2; }
+.topbar-brand-name {
+  font-size: .8rem;
+  font-weight: 900;
+  color: var(--t1);
+  letter-spacing: -.03em;
+}
+.topbar-brand-sub {
+  font-size: .6rem;
+  color: var(--t4);
+  font-weight: 500;
+  letter-spacing: .01em;
+}
+.topbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 .4rem;
+  flex-shrink: 0;
+}
+/* Hide brand on mobile — sidebar has it */
+@media (max-width: 900px) {
+  .topbar-brand { display: none; }
+  .topbar-divider { display: none; }
+}
 .topbar-right { display: flex; align-items: center; gap: .4rem; }
 .icon-btn {
   width: 32px; height: 32px;
@@ -2180,8 +2220,32 @@ textarea.form-input { resize: vertical; min-height: 70px; }
         <line class="burger-bottom" x1="3" y1="18" x2="21" y2="18"/>
       </svg>
     </button>
+    <!-- Desktop brand logo -->
+    <div class="topbar-brand" id="topbar-brand">
+      <div class="topbar-logo">
+        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block"><defs><linearGradient id="tlbg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#16213e"/></linearGradient><linearGradient id="tldrop" x1="20%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="#F97316"/><stop offset="100%" stop-color="#EA580C"/></linearGradient><linearGradient id="tlshine" x1="0%" y1="0%" x2="60%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.28"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/></linearGradient></defs><rect width="512" height="512" rx="110" fill="url(#tlbg)"/><ellipse cx="256" cy="315" rx="115" ry="88" fill="#F97316" opacity="0.15"/><path d="M256 80 C256 80 144 206 144 300 a112 112 0 0 0 224 0 C368 206 256 80 256 80 Z" fill="url(#tldrop)"/><path d="M256 80 C256 80 144 206 144 300 a112 112 0 0 0 224 0 C368 206 256 80 256 80 Z" fill="url(#tlshine)"/><path d="M275 222 L244 294 L264 294 L238 378 L292 280 L270 280 Z" fill="white" opacity="0.9"/></svg>
+      </div>
+      <div class="topbar-brand-text">
+        <div class="topbar-brand-name">Emmanuel's</div>
+        <div class="topbar-brand-sub">Fuel Tracking System</div>
+      </div>
+    </div>
+    <div class="topbar-divider"></div>
     <span class="topbar-title" id="topbar-title">Dashboard</span>
     <div class="topbar-right">
+      <button class="icon-btn" id="theme-btn" aria-label="Toggle theme">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <div class="user-chip" id="user-chip" onclick="A.nav('settings')" title="Settings">
+        <div class="user-av" id="user-av">EM</div>
+        <span class="user-chip-name" id="user-chip-name">Admin</span>
+      </div>
+      <button class="icon-btn" id="logout-btn" title="Sign out" style="color:var(--t3)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </header>
       <button class="icon-btn" id="theme-btn" aria-label="Toggle theme">
         <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
         <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
