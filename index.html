@@ -3843,36 +3843,266 @@ class App {
   dlReceipt(){ if(!this._rcpt) return; const {p,c}=this._rcpt; const inv=INV.totals(),total=(p.fuel==='Petrol'?inv.petrolTotal:inv.dieselTotal)||0; this._csv([['Receipt','Date','Customer','Vehicle','Fuel','Litres','% of Stock','Price/L','Total'],[p.id.slice(-8),p.date,c.name,c.car,p.fuel,p.litres,total?F.pct(p.litres,total):'N/A',p.ppl,p.total.toFixed(2)]],`receipt_${p.id.slice(-8)}`); }
 
   printReceipt(){
-    const content = document.getElementById('receipt-content')?.innerHTML;
-    if(!content) return;
-    const win = window.open('','_blank','width=420,height=640');
+    if(!this._rcpt) return;
+    const {p, c} = this._rcpt;
+    const inv = INV.totals();
+    const total = (p.fuel==='Petrol' ? inv.petrolTotal : inv.dieselTotal) || 0;
+    const stockPct = total ? F.pct(p.litres, total) : (p.stockPct||'N/A');
+    const prefs = DB.get('_prefs', {currency:'GHS'});
+    const currency = prefs.currency || 'GHS';
+    const CUR = { GHS:'GHS', USD:'USD', EUR:'EUR', GBP:'GBP', NGN:'NGN', KES:'KES', ZAR:'ZAR' };
+    const curLabel = CUR[currency] || currency;
+
+    // Amount in words (simple)
+    const amtWords = (n=>{
+      const a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+      const b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+      const t=Math.floor(n); const dec=Math.round((n-t)*100);
+      const words=t<20?a[t]:t<100?b[Math.floor(t/10)]+(t%10?' '+a[t%10]:''):t<1000?a[Math.floor(t/100)]+' Hundred'+(t%100?' '+( t%100<20?a[t%100]:b[Math.floor(t%100/10)]+(t%100%10?' '+a[t%100%10]:'')):''):t<10000?a[Math.floor(t/1000)]+' Thousand'+(t%1000?' '+( t%1000<20?a[t%1000]:b[Math.floor(t%1000/10)]+(t%1000%10?' '+a[t%1000%10]:'')):''):'';
+      return (words||'Zero')+(dec>0?` and ${dec}/100`:' Only');
+    })(p.total);
+
+    const fuelColor = p.fuel==='Diesel' ? '#1d4ed8' : '#ea580c';
+    const fuelBg    = p.fuel==='Diesel' ? '#eff6ff' : '#fff7ed';
+    const receiptNo = p.id.toUpperCase().slice(-8);
+
+    const win = window.open('','_blank','width=680,height=900');
     win.document.write(`<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8"/>
-  <title>Receipt</title>
+  <title>Receipt ${receiptNo} — Emmanuel's Fuel Station</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#111;padding:24px;max-width:380px;margin:0 auto}
-    .receipt{width:100%}
-    .receipt-logo{text-align:center;margin-bottom:1rem}
-    .receipt-logo-name{font-size:1rem;font-weight:900;letter-spacing:-.03em;color:#111}
-    .receipt-logo-sub{font-size:.68rem;color:#888;margin-top:.15rem}
-    .receipt-hr{border:none;border-top:1px dashed #ccc;margin:.75rem 0}
-    .rrow{display:flex;justify-content:space-between;align-items:center;padding:.22rem 0;font-size:.78rem}
-    .rkey{color:#666;font-weight:500}
-    .rval{font-weight:600;color:#111;text-align:right;max-width:60%}
-    .rtotal{display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;font-size:.95rem;font-weight:800;color:#111}
-    .rtotal .rkey{color:#111;font-weight:800}
-    .receipt-pct-row{display:flex;justify-content:space-between;align-items:center;padding:.2rem 0;font-size:.75rem;margin-top:.25rem}
-    .receipt-pct-badge{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:99px;padding:.15rem .55rem;font-size:.7rem;font-weight:700}
-    .receipt-footer{text-align:center;font-size:.68rem;color:#888;margin-top:1rem;line-height:1.6}
-    @media print{body{padding:0} @page{margin:10mm}}
+    body{font-family:'Inter',system-ui,sans-serif;background:#f4f4f5;color:#111;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px}
+    .page{background:#fff;width:100%;max-width:560px;border-radius:12px;overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,.10)}
+
+    /* ── Header ── */
+    .hd{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);padding:28px 32px;position:relative;overflow:hidden}
+    .hd::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;background:radial-gradient(circle,rgba(249,115,22,.3) 0%,transparent 65%);pointer-events:none}
+    .hd::after{content:'';position:absolute;bottom:-40px;left:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(249,115,22,.15) 0%,transparent 65%);pointer-events:none}
+    .hd-inner{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start}
+    .hd-brand{}
+    .hd-logo{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+    .hd-logo-icon{width:36px;height:36px;background:#f97316;border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px rgba(249,115,22,.25)}
+    .hd-logo-icon svg{width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+    .hd-name{font-size:1rem;font-weight:800;color:#fff;letter-spacing:-.03em}
+    .hd-sub{font-size:.68rem;color:rgba(255,255,255,.45);margin-top:2px;letter-spacing:.02em}
+    .hd-badge{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.35);border-radius:8px;padding:10px 14px;text-align:right}
+    .hd-badge-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.45);margin-bottom:3px}
+    .hd-badge-no{font-size:1rem;font-weight:900;color:#f97316;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+    .hd-badge-type{font-size:.65rem;color:rgba(255,255,255,.5);margin-top:3px;text-align:right}
+
+    /* ── Body ── */
+    .body{padding:28px 32px}
+
+    /* Fuel type banner */
+    .fuel-banner{display:flex;align-items:center;justify-content:space-between;background:${fuelBg};border:1.5px solid ${fuelColor}22;border-radius:10px;padding:12px 16px;margin-bottom:22px}
+    .fuel-banner-left{display:flex;align-items:center;gap:10px}
+    .fuel-dot{width:10px;height:10px;border-radius:50%;background:${fuelColor};flex-shrink:0}
+    .fuel-name{font-size:.88rem;font-weight:700;color:${fuelColor};letter-spacing:-.01em}
+    .fuel-desc{font-size:.68rem;color:#888;margin-top:1px}
+    .fuel-qty{font-size:1.25rem;font-weight:900;color:${fuelColor};letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+    .fuel-qty-unit{font-size:.7rem;color:#888;font-weight:500;margin-left:2px}
+
+    /* Section label */
+    .sec-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#aaa;margin-bottom:10px;margin-top:20px}
+
+    /* Info rows */
+    .rows{border:1px solid #e5e7eb;border-radius:10px;overflow:hidden}
+    .row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #f3f4f6}
+    .row:last-child{border-bottom:none}
+    .row-alt{background:#fafafa}
+    .rk{font-size:.73rem;color:#6b7280;font-weight:500}
+    .rv{font-size:.78rem;font-weight:600;color:#111;text-align:right;max-width:58%}
+
+    /* Total block */
+    .total-block{background:linear-gradient(135deg,#1a1a2e 0%,#111827 100%);border-radius:10px;padding:18px 20px;margin-top:16px;display:flex;align-items:center;justify-content:space-between}
+    .total-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.5)}
+    .total-amount{font-size:1.55rem;font-weight:900;color:#fff;letter-spacing:-.04em;font-variant-numeric:tabular-nums;margin-top:2px}
+    .total-cur{font-size:.75rem;color:rgba(255,255,255,.45);margin-top:4px}
+
+    /* Amount in words */
+    .words-block{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;margin-top:10px;display:flex;gap:8px;align-items:flex-start}
+    .words-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af;white-space:nowrap;margin-top:1px}
+    .words-val{font-size:.72rem;font-style:italic;color:#374151;line-height:1.5;font-weight:500}
+
+    /* Stock pct */
+    .pct-block{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-top:8px}
+    .pct-label{font-size:.72rem;color:#6b7280;font-weight:500}
+    .pct-badge{background:${fuelBg};color:${fuelColor};border:1px solid ${fuelColor}44;border-radius:99px;padding:3px 10px;font-size:.7rem;font-weight:700}
+
+    /* Notes */
+    .notes-block{margin-top:10px;padding:10px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px}
+    .notes-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#92400e;margin-bottom:4px}
+    .notes-val{font-size:.73rem;color:#78350f;line-height:1.5}
+
+    /* Signature */
+    .sig-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px}
+    .sig-box{border-top:1.5px solid #e5e7eb;padding-top:8px}
+    .sig-label{font-size:.62rem;color:#9ca3af;font-weight:500;text-align:center}
+
+    /* Footer */
+    .ft{background:#f9fafb;border-top:1px solid #e5e7eb;padding:16px 32px;display:flex;align-items:center;justify-content:space-between}
+    .ft-brand{font-size:.7rem;font-weight:700;color:#374151}
+    .ft-msg{font-size:.68rem;color:#9ca3af}
+    .ft-dots{display:flex;gap:4px;align-items:center}
+    .ft-dot{width:5px;height:5px;border-radius:50%;background:#e5e7eb}
+    .ft-dot.active{background:#f97316}
+
+    @media print{
+      *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+      body{background:#fff;padding:0}
+      .page{box-shadow:none;border-radius:0;max-width:100%}
+      @page{margin:0;size:A4}
+    }
   </style>
 </head>
 <body>
-  ${content}
-  <script>window.onload=function(){window.print();window.onafterprint=function(){window.close();}}<\/script>
+<div class="page">
+
+  <!-- Header -->
+  <div class="hd">
+    <div class="hd-inner">
+      <div class="hd-brand">
+        <div class="hd-logo">
+          <div class="hd-logo-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2C12 2 5 9 5 14a7 7 0 0 0 14 0c0-5-7-12-7-12z"/></svg>
+          </div>
+          <div>
+            <div class="hd-name">Emmanuel's Fuel Station</div>
+            <div class="hd-sub">Official Transaction Receipt</div>
+          </div>
+        </div>
+      </div>
+      <div class="hd-badge">
+        <div class="hd-badge-label">Receipt No.</div>
+        <div class="hd-badge-no">#${receiptNo}</div>
+        <div class="hd-badge-type">FUEL SALE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="body">
+
+    <!-- Fuel banner -->
+    <div class="fuel-banner">
+      <div class="fuel-banner-left">
+        <div class="fuel-dot"></div>
+        <div>
+          <div class="fuel-name">${p.fuel}</div>
+          <div class="fuel-desc">Fuel Type</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <span class="fuel-qty">${parseFloat(p.litres).toFixed(2)}</span>
+        <span class="fuel-qty-unit">Litres</span>
+      </div>
+    </div>
+
+    <!-- Transaction info -->
+    <div class="sec-label">Transaction Details</div>
+    <div class="rows">
+      <div class="row row-alt">
+        <span class="rk">Date of Sale</span>
+        <span class="rv">${new Date(p.date+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'long',year:'numeric'})}</span>
+      </div>
+      <div class="row">
+        <span class="rk">Issued At</span>
+        <span class="rv">${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span>
+      </div>
+      <div class="row row-alt">
+        <span class="rk">Unit Price</span>
+        <span class="rv">${curLabel} ${parseFloat(p.ppl).toFixed(2)} / Litre</span>
+      </div>
+      <div class="row">
+        <span class="rk">Quantity</span>
+        <span class="rv">${parseFloat(p.litres).toFixed(2)} L</span>
+      </div>
+    </div>
+
+    <!-- Customer info -->
+    <div class="sec-label" style="margin-top:18px">Customer Information</div>
+    <div class="rows">
+      <div class="row row-alt">
+        <span class="rk">Full Name</span>
+        <span class="rv">${c.name||'—'}</span>
+      </div>
+      <div class="row">
+        <span class="rk">Vehicle / Plate</span>
+        <span class="rv">${c.car||'—'}</span>
+      </div>
+      <div class="row row-alt">
+        <span class="rk">Phone</span>
+        <span class="rv">${c.phone||'—'}</span>
+      </div>
+    </div>
+
+    <!-- Total -->
+    <div class="total-block">
+      <div>
+        <div class="total-label">Total Amount</div>
+        <div class="total-amount">${parseFloat(p.total).toFixed(2)}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:1.1rem;font-weight:800;color:#f97316;letter-spacing:-.02em">${curLabel}</div>
+        <div style="font-size:.65rem;color:rgba(255,255,255,.35);margin-top:4px">${p.litres} L × ${p.ppl}</div>
+      </div>
+    </div>
+
+    <!-- Amount in words -->
+    <div class="words-block">
+      <span class="words-label">In Words</span>
+      <span class="words-val">${curLabel} ${amtWords}</span>
+    </div>
+
+    <!-- Stock % -->
+    <div class="pct-block">
+      <span class="pct-label">% of Total ${p.fuel} Stock Used</span>
+      <span class="pct-badge">${stockPct}</span>
+    </div>
+
+    ${p.notes ? `
+    <!-- Notes -->
+    <div class="notes-block">
+      <div class="notes-label">Note</div>
+      <div class="notes-val">${p.notes}</div>
+    </div>` : ''}
+
+    <!-- Signatures -->
+    <div class="sig-row">
+      <div class="sig-box">
+        <div class="sig-label">Authorised By</div>
+      </div>
+      <div class="sig-box">
+        <div class="sig-label">Customer Signature</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="ft">
+    <div>
+      <div class="ft-brand">Emmanuel's Fuel Tracking System</div>
+      <div class="ft-msg">Thank you for your business</div>
+    </div>
+    <div class="ft-dots">
+      <div class="ft-dot active"></div>
+      <div class="ft-dot"></div>
+      <div class="ft-dot"></div>
+    </div>
+  </div>
+
+</div>
+<script>
+  window.onload = function(){
+    setTimeout(function(){ window.print(); },400);
+    window.onafterprint = function(){ window.close(); };
+  };
+<\/script>
 </body>
 </html>`);
     win.document.close();
