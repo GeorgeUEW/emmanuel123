@@ -3829,6 +3829,22 @@ class App {
     document.getElementById('login-screen').style.display='';
     document.getElementById('app').style.display='none';
 
+    // Clear any auto-filled credentials from password manager
+    const lUser = document.getElementById('l-user');
+    const lPass = document.getElementById('l-pass');
+    const lBtn  = document.getElementById('login-form')?.querySelector('[type=submit]');
+    if(lUser) lUser.value='';
+    if(lPass) lPass.value='';
+    if(lBtn){ lBtn.textContent='Sign In'; lBtn.disabled=false; }
+    document.getElementById('l-err')?.classList.remove('show');
+    // Small delay before re-enabling submit to block password manager auto-submit
+    this._loginReady = false;
+    setTimeout(()=>{ this._loginReady = true; }, 800);
+    // Also mark ready immediately on any user keypress
+    const _markReady = ()=>{ this._loginReady = true; };
+    lUser?.addEventListener('keydown', _markReady, {once:true});
+    lPass?.addEventListener('keydown', _markReady, {once:true});
+
     // Toggle between sign-in and register
     document.getElementById('go-register').onclick=()=>{
       document.getElementById('auth-signin').style.display='none';
@@ -3869,6 +3885,8 @@ class App {
     // Sign-in submit
     document.getElementById('login-form').onsubmit=async e=>{
       e.preventDefault();
+      // Block auto-submit from password manager on page load
+      if(!this._loginReady) return;
       const email=document.getElementById('l-user').value.trim().toLowerCase();
       const pwd=document.getElementById('l-pass').value;
       const errEl=document.getElementById('l-err');
