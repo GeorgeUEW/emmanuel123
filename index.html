@@ -3749,19 +3749,25 @@ class App {
 
   async init(){
     this._showLoadingOverlay();
-    // Safety timeout — never stay on loading screen more than 5s
+    // Track if auth has already resolved to avoid double-boot
+    let authResolved = false;
+    // Safety timeout — if Firebase takes too long, show login
     const safetyTimer = setTimeout(()=>{
-      this._hideLoadingOverlay();
-      if(!this.user) this._showLogin();
-    }, 5000);
-    // Start Firestore load in background — don't await it
-    loadAllFromFirestore().catch(e => console.warn('Firestore load failed', e));
-    // Let Firebase Auth decide immediately
+      if(!authResolved){
+        authResolved = true;
+        this._hideLoadingOverlay();
+        if(!this.user) this._showLogin();
+      }
+    }, 8000);
+    // Let Firebase Auth decide, then load Firestore data before booting
     onAuthStateChanged(fb_auth, async (fbUser) => {
+      if(authResolved) return; // prevent double-fire on re-auth events
+      authResolved = true;
       clearTimeout(safetyTimer);
-      this._hideLoadingOverlay();
       const ADMIN_EMAIL = 'eb810111@gmail.com';
       if(fbUser){
+        // Wait for Firestore data BEFORE booting so dashboard has real data
+        try { await loadAllFromFirestore(); } catch(e){ console.warn('Firestore load failed', e); }
         let profile = DB.get('_users',[]).find(u=>u.uid===fbUser.uid);
         if(!profile){
           // First time — create profile, admin email always gets admin role
@@ -3775,8 +3781,10 @@ class App {
           DB.set('_users', users);
         }
         this.user = profile;
+        this._hideLoadingOverlay();
         this._boot();
       } else {
+        this._hideLoadingOverlay();
         this._showLogin();
       }
     });
