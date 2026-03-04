@@ -1938,8 +1938,8 @@ textarea.form-input { resize: vertical; min-height: 70px; }
         <p class="login-box-sub">Sign in to your fuel management dashboard</p>
         <form id="login-form" novalidate>
           <div class="form-field">
-            <label class="form-label" for="l-user">Username</label>
-            <input class="form-input" type="text" id="l-user" placeholder="Enter username" autocomplete="username"/>
+            <label class="form-label" for="l-user">Email Address</label>
+            <input class="form-input" type="email" id="l-user" placeholder="Enter your email" autocomplete="email"/>
           </div>
           <div class="form-field">
             <label class="form-label" for="l-pass">Password</label>
@@ -1968,8 +1968,8 @@ textarea.form-input { resize: vertical; min-height: 70px; }
             <input class="form-input" type="text" id="r-display" placeholder="e.g. Kwame Mensah" autocomplete="name"/>
           </div>
           <div class="form-field">
-            <label class="form-label" for="r-uname">Username *</label>
-            <input class="form-input" type="text" id="r-uname" placeholder="Lowercase, no spaces"/>
+            <label class="form-label" for="r-uname">Email Address *</label>
+            <input class="form-input" type="email" id="r-uname" placeholder="e.g. kwame@example.com" autocomplete="email"/>
           </div>
           <div class="form-field">
             <label class="form-label" for="r-pwd">Password *</label>
@@ -2988,8 +2988,13 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 //  FIREBASE SETUP
 // ═══════════════════════════════════════════
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs }
+import { getFirestore, doc, getDoc, setDoc, onSnapshot }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  signOut, onAuthStateChanged, updatePassword, EmailAuthProvider,
+  reauthenticateWithCredential
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDmh1RYZmY3ACZTSkRW0YScSLDylqFwtvg",
@@ -3003,6 +3008,7 @@ const firebaseConfig = {
 
 const fbApp  = initializeApp(firebaseConfig);
 const db_fs  = getFirestore(fbApp);
+const fb_auth = getAuth(fbApp);
 
 // ── Firestore document reference for a key ──
 const docRef = (k) => doc(db_fs, 'fuelapp', k);
@@ -3106,16 +3112,21 @@ class App {
   constructor(){ this.user=null; this.page='dashboard'; this.cPage=1; this.hPage=1; this.aPage=1; this.PS=15; this._delCb=null; this._rcpt=null; this.dFrom=null; this.dTo=null; }
 
   async init(){
-    // Show loading overlay while fetching from Firestore
     this._showLoadingOverlay();
-    try {
-      await loadAllFromFirestore();
-    } catch(e){
-      console.warn('Firestore load failed, continuing with empty state', e);
-    }
-    this._hideLoadingOverlay();
-    const s=sessionStorage.getItem('_sess');
-    if(s){ this.user=JSON.parse(s); this._boot(); } else this._showLogin();
+    try { await loadAllFromFirestore(); } catch(e){ console.warn('Firestore load failed', e); }
+    // Let Firebase Auth decide if user is logged in
+    onAuthStateChanged(fb_auth, async (fbUser) => {
+      this._hideLoadingOverlay();
+      if(fbUser){
+        // Logged in — load their profile from Firestore
+        const profile = DB.get('_users',[]).find(u=>u.uid===fbUser.uid)
+          || { uid:fbUser.uid, email:fbUser.email, display:fbUser.email.split('@')[0], role:'staff', createdAt:new Date().toLocaleDateString('en-GB') };
+        this.user = profile;
+        this._boot();
+      } else {
+        this._showLogin();
+      }
+    });
   }
 
   _showLogin(){
@@ -3160,49 +3171,73 @@ class App {
     });
 
     // Sign-in submit
-    document.getElementById('login-form').onsubmit=e=>{
+    document.getElementById('login-form').onsubmit=async e=>{
       e.preventDefault();
-      const u=document.getElementById('l-user').value.trim().toLowerCase();
-      const p=document.getElementById('l-pass').value;
-      const users=DB.get('_users',[{username:'admin',password:'emmanuel2024',display:'Emmanuel Admin',role:'admin',createdAt:'System'}]);
-      const found=users.find(x=>x.username===u&&x.password===p);
-      if(found){ this.user=found; sessionStorage.setItem('_sess',JSON.stringify(found)); this._audit('login',`"${found.display||found.username}" signed in`); this._boot(); }
-      else document.getElementById('l-err').classList.add('show');
+      const email=document.getElementById('l-user').value.trim().toLowerCase();
+      const pwd=document.getElementById('l-pass').value;
+      const errEl=document.getElementById('l-err');
+      const btn=e.target.querySelector('[type=submit]');
+      errEl.classList.remove('show');
+      btn.textContent='Signing in…'; btn.disabled=true;
+      try {
+        await signInWithEmailAndPassword(fb_auth, email, pwd);
+        // onAuthStateChanged will handle the rest
+      } catch(err){
+        btn.textContent='Sign In'; btn.disabled=false;
+        const msgs={
+          'auth/user-not-found':'No account found with this email.',
+          'auth/wrong-password':'Incorrect password.',
+          'auth/invalid-email':'Please enter a valid email address.',
+          'auth/invalid-credential':'Incorrect email or password.',
+          'auth/too-many-requests':'Too many attempts. Please try again later.',
+        };
+        errEl.textContent=msgs[err.code]||'Sign in failed. Please try again.';
+        errEl.classList.add('show');
+      }
     };
 
     // Register submit
-    document.getElementById('reg-form').onsubmit=e=>{
+    document.getElementById('reg-form').onsubmit=async e=>{
       e.preventDefault();
       const display=document.getElementById('r-display').value.trim();
-      const uname=document.getElementById('r-uname').value.trim().toLowerCase().replace(/\s+/g,'');
+      const email=document.getElementById('r-uname').value.trim().toLowerCase();
       const pwd=document.getElementById('r-pwd').value;
       const cpwd=document.getElementById('r-cpwd').value;
       const role=document.getElementById('r-role').value;
       const err=document.getElementById('reg-err');
-      const users=DB.get('_users',[{username:'admin',password:'emmanuel2024',display:'Emmanuel Admin',role:'admin',createdAt:'System'}]);
-      if(!display||!uname||!pwd||!cpwd){ err.textContent='All fields are required.'; err.classList.add('show'); return; }
-      if(uname.length<3){ err.textContent='Username must be at least 3 characters.'; err.classList.add('show'); return; }
+      const btn=e.target.querySelector('[type=submit]');
+      if(!display||!email||!pwd||!cpwd){ err.textContent='All fields are required.'; err.classList.add('show'); return; }
       if(pwd.length<6){ err.textContent='Password must be at least 6 characters.'; err.classList.add('show'); return; }
       if(pwd!==cpwd){ err.textContent='Passwords do not match.'; err.classList.add('show'); return; }
-      if(users.find(x=>x.username===uname)){ err.textContent='Username already taken. Choose another.'; err.classList.add('show'); return; }
       err.classList.remove('show');
-      const newUser={username:uname,password:pwd,display,role,createdAt:new Date().toLocaleDateString('en-GB')};
-      users.push(newUser); DB.set('_users',users);
-      this._audit('create',`New account registered: ${display} (${uname})`,`Role: ${role}`);
-      this._notifySMS('user',`Name: ${display}\nUsername: @${uname}\nRole: ${role}`);
-      // Auto sign in
-      this.user=newUser; sessionStorage.setItem('_sess',JSON.stringify(newUser));
-      this._audit('login',`"${display}" signed in`); this._boot();
+      btn.textContent='Creating…'; btn.disabled=true;
+      try {
+        const cred = await createUserWithEmailAndPassword(fb_auth, email, pwd);
+        const newUser = { uid:cred.user.uid, email, display, role, createdAt:new Date().toLocaleDateString('en-GB') };
+        const users = DB.get('_users',[]);
+        users.push(newUser); DB.set('_users', users);
+        this._audit('create',`New account registered: ${display} (${email})`,`Role: ${role}`);
+        this._notifySMS('user',`Name: ${display}\nEmail: ${email}\nRole: ${role}`);
+        // onAuthStateChanged will boot the app
+      } catch(err2){
+        btn.textContent='Create Account'; btn.disabled=false;
+        const msgs={
+          'auth/email-already-in-use':'An account with this email already exists.',
+          'auth/invalid-email':'Please enter a valid email address.',
+          'auth/weak-password':'Password must be at least 6 characters.',
+        };
+        err.textContent=msgs[err2.code]||'Registration failed. Please try again.';
+        err.classList.add('show');
+      }
     };
   }
 
   _boot(){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='';
-    const d=this.user.display||this.user.username;
+    const d=this.user.display||this.user.email||'User';
     document.getElementById('user-chip-name').textContent=d;
     document.getElementById('user-av').textContent=F.init(d);
-    // Populate sidebar user card
     const sbName=document.getElementById('sb-user-name');
     const sbRole=document.getElementById('sb-user-role');
     const sbAv=document.getElementById('sb-user-av');
@@ -3211,8 +3246,8 @@ class App {
     if(sbAv){ sbAv.textContent=F.init(d); sbAv.style.background=av(d); }
     this._refreshTopbar();
     document.documentElement.setAttribute('data-theme',DB.get('_theme','light'));
-    this._bind(); this._fillSelects(); this._initRange(); this.nav('dashboard');
-    // Attach real-time Firestore listeners for cross-device sync
+    if(!this._bound){ this._bind(); this._fillSelects(); this._initRange(); }
+    this.nav('dashboard');
     attachListeners(this);
   }
 
@@ -3244,9 +3279,9 @@ class App {
     if(sbClose) sbClose.addEventListener('click',()=>document.getElementById('app').classList.remove('nav-open'));
     // Sidebar logout btn
     const sbLogout=document.getElementById('sb-logout-btn');
-    if(sbLogout) sbLogout.addEventListener('click',()=>{ this._audit('login',`"${this.user?.display}" signed out`); sessionStorage.removeItem('_sess'); location.reload(); });
+    if(sbLogout) sbLogout.addEventListener('click',()=>{ this._audit('login',`"${this.user?.display}" signed out`); signOut(fb_auth); });
     document.getElementById('theme-btn').addEventListener('click',()=>{ const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'; document.documentElement.setAttribute('data-theme',t); DB.set('_theme',t); this._redraw(); });
-    document.getElementById('logout-btn').addEventListener('click',()=>{ this._audit('login',`"${this.user?.display}" signed out`); sessionStorage.removeItem('_sess'); location.reload(); });
+    document.getElementById('logout-btn').addEventListener('click',()=>{ this._audit('login',`"${this.user?.display}" signed out`); signOut(fb_auth); });
 
     // Dashboard range
     document.getElementById('d-from').addEventListener('change',e=>{ this.dFrom=e.target.value; this.renderDash(); });
@@ -3908,35 +3943,50 @@ class App {
 
   saveProfile(){
     const display=document.getElementById('s-display').value.trim();
-    const username=document.getElementById('s-username').value.trim().toLowerCase();
-    if(!display||!username){ this.toast('Name and username required','error'); return; }
-    let users=DB.get('_users',[{username:'admin',password:'emmanuel2024',display:'Emmanuel Admin',role:'admin',createdAt:'System'}]);
-    // Save pending avatar if any
+    if(!display){ this.toast('Display name required','error'); return; }
+    let users=DB.get('_users',[]);
     if(this._pendingAvatar!==undefined){
       const avs=DB.get('_avatars',{});
-      if(this._pendingAvatar) avs[this.user.username]=this._pendingAvatar;
-      else delete avs[this.user.username];
+      if(this._pendingAvatar) avs[this.user.uid||this.user.email]=this._pendingAvatar;
+      else delete avs[this.user.uid||this.user.email];
       DB.set('_avatars',avs);
       this._pendingAvatar=undefined;
     }
-    users=users.map(u=>u.username===this.user.username?{...u,display,username}:u);
+    users=users.map(u=>(u.uid===this.user.uid)?{...u,display}:u);
     DB.set('_users',users);
-    this.user={...this.user,display,username};
-    sessionStorage.setItem('_sess',JSON.stringify(this.user));
+    this.user={...this.user,display};
     this._refreshTopbar();
-    this._audit('settings','Profile updated',`Display: ${display}, Username: ${username}`);
+    this._audit('settings','Profile updated',`Display: ${display}`);
     this.toast('Profile saved');
   }
-  savePass(){
-    const oldP=document.getElementById('s-old').value, newP=document.getElementById('s-new').value, cnfP=document.getElementById('s-cnf').value;
-    const err=document.getElementById('s-perr'), users=DB.get('_users',[{username:'admin',password:'emmanuel2024',display:'Emmanuel Admin'}]);
-    const u=users.find(x=>x.username===this.user.username);
-    if(!u||u.password!==oldP){ err.textContent='Current password is incorrect.'; err.classList.add('show'); return; }
+  async savePass(){
+    const oldP=document.getElementById('s-old').value;
+    const newP=document.getElementById('s-new').value;
+    const cnfP=document.getElementById('s-cnf').value;
+    const err=document.getElementById('s-perr');
+    if(!oldP||!newP||!cnfP){ err.textContent='All fields are required.'; err.classList.add('show'); return; }
     if(newP.length<6){ err.textContent='New password must be at least 6 characters.'; err.classList.add('show'); return; }
     if(newP!==cnfP){ err.textContent='Passwords do not match.'; err.classList.add('show'); return; }
-    DB.set('_users',users.map(x=>x.username===this.user.username?{...x,password:newP}:x));
-    err.classList.remove('show'); ['s-old','s-new','s-cnf'].forEach(id=>document.getElementById(id).value='');
-    this._audit('settings','Password changed'); this.toast('Password updated');
+    try {
+      // Re-authenticate first (Firebase requires this for password changes)
+      const fbUser=fb_auth.currentUser;
+      const cred=EmailAuthProvider.credential(fbUser.email, oldP);
+      await reauthenticateWithCredential(fbUser, cred);
+      await updatePassword(fbUser, newP);
+      err.classList.remove('show');
+      ['s-old','s-new','s-cnf'].forEach(id=>document.getElementById(id).value='');
+      this._audit('settings','Password changed');
+      this.toast('Password updated ✓');
+    } catch(e){
+      const msgs={
+        'auth/wrong-password':'Current password is incorrect.',
+        'auth/invalid-credential':'Current password is incorrect.',
+        'auth/too-many-requests':'Too many attempts. Please try again later.',
+        'auth/weak-password':'New password is too weak.',
+      };
+      err.textContent=msgs[e.code]||'Password update failed. Try again.';
+      err.classList.add('show');
+    }
   }
 
   savePrefs(){
@@ -3946,50 +3996,38 @@ class App {
 
   /* ── USER MANAGEMENT ── */
   renderUsersTable(){
-    const users=DB.get('_users',[{username:'admin',password:'emmanuel2024',display:'Emmanuel Admin',role:'admin',createdAt:'System'}]);
+    const users=DB.get('_users',[]);
     const tb=document.getElementById('users-tbody'); if(!tb) return;
     if(!users.length){ tb.innerHTML='<tr><td colspan="5" class="empty-row">No users found.</td></tr>'; return; }
     tb.innerHTML=users.map(u=>{
-      const isSelf=u.username===this.user?.username;
+      const isSelf=u.uid===this.user?.uid;
       const isAdmin=this.user?.role==='admin';
+      const avs=DB.get('_avatars',{}); const img=avs[u.uid||u.email];
       return `<tr>
         <td><div class="row-gap">
-          <div class="user-row-av" style="background:${av(u.display||u.username)};overflow:hidden">
-            ${(()=>{ const avs=DB.get('_avatars',{}); const img=avs[u.username]; return img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-sm)"/>`:`${F.init(u.display||u.username)}`; })()}
+          <div class="user-row-av" style="background:${av(u.display||u.email)};overflow:hidden">
+            ${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-sm)"/>`:`${F.init(u.display||u.email)}`}
           </div>
-          <div><div class="fw-600">${F.esc(u.display||u.username)}</div>${isSelf?'<div style="font-size:.65rem;color:var(--brand);font-weight:600">You</div>':''}</div>
+          <div><div class="fw-600">${F.esc(u.display||u.email)}</div>${isSelf?'<div style="font-size:.65rem;color:var(--brand);font-weight:600">You</div>':''}</div>
         </div></td>
-        <td><span style="font-family:monospace;font-size:.8rem;color:var(--t3)">@${F.esc(u.username)}</span></td>
+        <td><span style="font-size:.78rem;color:var(--t3)">${F.esc(u.email||'—')}</span></td>
         <td><span class="badge ${u.role==='admin'?'badge-admin':'badge-staff'}">${u.role==='admin'?'Admin':'Staff'}</span></td>
         <td class="text-muted" style="font-size:.75rem">${u.createdAt||'—'}</td>
         <td><div class="row-gap">
-          ${isAdmin?`<button class="btn btn-secondary btn-xs" onclick="A.openEditUser('${u.username}')">Edit</button>`:''}
-          ${isAdmin&&!isSelf?`<button class="btn btn-danger btn-xs" onclick="A.deleteUser('${u.username}')">Remove</button>`:''}
+          ${isAdmin?`<button class="btn btn-secondary btn-xs" onclick="A.openEditUser('${u.uid}')">Edit</button>`:''}
+          ${isAdmin&&!isSelf?`<button class="btn btn-danger btn-xs" onclick="A.deleteUser('${u.uid}')">Remove</button>`:''}
           ${!isAdmin||isSelf?'<span class="text-muted" style="font-size:.72rem">—</span>':''}
         </div></td>
       </tr>`;
     }).join('');
   }
 
-  openAddUser(){
-    document.getElementById('eu-title').textContent='Add New User';
-    document.getElementById('eu-orig').value='__new__';
-    document.getElementById('eu-display').value='';
-    document.getElementById('eu-username').value='';
-    document.getElementById('eu-pwd').value='';
-    document.getElementById('eu-role').value='staff';
-    document.getElementById('eu-role-staff').classList.add('selected');
-    document.getElementById('eu-role-admin').classList.remove('selected');
-    document.getElementById('eu-err').classList.remove('show');
-    document.getElementById('m-eu').style.display='flex';
-  }
-
-  openEditUser(username){
-    const users=DB.get('_users',[]); const u=users.find(x=>x.username===username); if(!u) return;
+  openEditUser(uid){
+    const users=DB.get('_users',[]); const u=users.find(x=>x.uid===uid); if(!u) return;
     document.getElementById('eu-title').textContent='Edit User';
-    document.getElementById('eu-orig').value=username;
+    document.getElementById('eu-orig').value=uid;
     document.getElementById('eu-display').value=u.display||'';
-    document.getElementById('eu-username').value=u.username||'';
+    document.getElementById('eu-username').value=u.email||'';
     document.getElementById('eu-pwd').value='';
     document.getElementById('eu-role').value=u.role||'staff';
     document.getElementById('eu-role-staff').classList.toggle('selected',u.role!=='admin');
@@ -3999,76 +4037,60 @@ class App {
   }
 
   saveEditUser(){
-    const orig=document.getElementById('eu-orig').value;
+    const uid=document.getElementById('eu-orig').value;
     const display=document.getElementById('eu-display').value.trim();
-    const username=document.getElementById('eu-username').value.trim().toLowerCase().replace(/\s+/g,'');
     const role=document.getElementById('eu-role').value;
-    const pwd=document.getElementById('eu-pwd').value;
     const err=document.getElementById('eu-err');
     let users=DB.get('_users',[]);
-    if(!display||!username){ err.textContent='Name and username are required.'; err.classList.add('show'); return; }
-    if(username.length<3){ err.textContent='Username must be at least 3 characters.'; err.classList.add('show'); return; }
-    if(pwd&&pwd.length<6){ err.textContent='Password must be at least 6 characters.'; err.classList.add('show'); return; }
-    if(orig==='__new__'){
-      if(!pwd){ err.textContent='Password is required for new users.'; err.classList.add('show'); return; }
-      if(users.find(x=>x.username===username)){ err.textContent='Username already exists.'; err.classList.add('show'); return; }
-      const newU={username,display,role,password:pwd,createdAt:new Date().toLocaleDateString('en-GB')};
-      users.push(newU); DB.set('_users',users);
-      this._audit('create',`Admin added user: ${display} (@${username})`,`Role: ${role}`);
-      this.toast(`User @${username} created`);
-    } else {
-      if(users.find(x=>x.username===username&&x.username!==orig)){ err.textContent='Username already taken.'; err.classList.add('show'); return; }
-      users=users.map(u=>u.username===orig?{...u,display,username,role,...(pwd?{password:pwd}:{})}:u);
-      DB.set('_users',users);
-      // Update session if editing self
-      if(orig===this.user?.username){
-        this.user={...this.user,display,username,role};
-        sessionStorage.setItem('_sess',JSON.stringify(this.user));
-        document.getElementById('user-chip-name').textContent=display;
-        document.getElementById('user-av').textContent=F.init(display);
-      }
-      this._audit('edit',`Edited user: ${display} (@${username})`,`Role: ${role}`);
-      this.toast(`User @${username} updated`);
+    if(!display){ err.textContent='Display name is required.'; err.classList.add('show'); return; }
+    users=users.map(u=>u.uid===uid?{...u,display,role}:u);
+    DB.set('_users',users);
+    if(uid===this.user?.uid){
+      this.user={...this.user,display,role};
+      this._refreshTopbar();
     }
+    this._audit('edit',`Edited user: ${display}`,`Role: ${role}`);
+    this.toast(`User updated`);
     err.classList.remove('show');
     this.closeModal('m-eu'); this.renderUsersTable();
   }
 
-  deleteUser(username){
-    if(username===this.user?.username){ this.toast('Cannot delete your own account','error'); return; }
-    this._confirm(`Remove user @${username}? This cannot be undone.`,()=>{
-      let users=DB.get('_users',[]); const u=users.find(x=>x.username===username);
-      DB.set('_users',users.filter(x=>x.username!==username));
-      this._audit('delete',`Removed user: ${u?.display||username} (@${username})`);
-      this.renderUsersTable(); this.toast(`@${username} removed`,'error');
+  deleteUser(uid){
+    if(uid===this.user?.uid){ this.toast('Cannot delete your own account','error'); return; }
+    const users=DB.get('_users',[]); const u=users.find(x=>x.uid===uid);
+    this._confirm(`Remove ${u?.display||u?.email}? This cannot be undone.`,()=>{
+      DB.set('_users',users.filter(x=>x.uid!==uid));
+      this._audit('delete',`Removed user: ${u?.display||u?.email}`);
+      this.renderUsersTable(); this.toast(`${u?.display||'User'} removed`,'error');
     });
   }
 
   /* ── SMS NOTIFICATIONS ── */
   /* ── TOPBAR AVATAR REFRESH ── */
   _refreshTopbar(){
-    const avs=DB.get('_avatars',{}), img=avs[this.user?.username];
+    const avKey=this.user?.uid||this.user?.email;
+    const avs=DB.get('_avatars',{}), img=avs[avKey];
     const el=document.getElementById('user-av');
     if(!el) return;
     if(img){ el.innerHTML=`<img src="${img}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`; }
-    else { el.textContent=F.init(this.user?.display||this.user?.username||'?'); }
+    else { el.textContent=F.init(this.user?.display||this.user?.email||'?'); }
     const nameEl=document.getElementById('user-chip-name');
-    if(nameEl) nameEl.textContent=this.user?.display||this.user?.username||'';
-    // Sync sidebar drawer user card
+    if(nameEl) nameEl.textContent=this.user?.display||this.user?.email||'';
     const sbAv=document.getElementById('sb-user-av');
     const sbName=document.getElementById('sb-user-name');
     const sbRole=document.getElementById('sb-user-role');
     if(sbAv){
       if(img){ sbAv.innerHTML=`<img src="${img}" alt=""/>`; }
-      else { sbAv.textContent=F.init(this.user?.display||this.user?.username||'?'); sbAv.style.background=av(this.user?.display||'U'); }
+      else { sbAv.textContent=F.init(this.user?.display||this.user?.email||'?'); sbAv.style.background=av(this.user?.display||'U'); }
     }
-    if(sbName) sbName.textContent=this.user?.display||this.user?.username||'';
+    if(sbName) sbName.textContent=this.user?.display||this.user?.email||'';
     if(sbRole){ const r=this.user?.role||'staff'; sbRole.textContent=r.charAt(0).toUpperCase()+r.slice(1); }
   }
 
   /* ── PROFILE PICTURE ── */
   _loadAvatarPreview(){
-    const avs=DB.get('_avatars',{}), img=avs[this.user?.username];
+    const avKey=this.user?.uid||this.user?.email;
+    const avs=DB.get('_avatars',{}), img=avs[avKey];
     const wrap=document.getElementById('av-preview-wrap');
     const nameEl=document.getElementById('av-name-label');
     if(!wrap) return;
