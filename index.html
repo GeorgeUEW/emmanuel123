@@ -2858,7 +2858,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     <div class="modal-body" id="receipt-content"></div>
     <div class="modal-foot">
       <button class="btn btn-secondary" onclick="A.closeModal('m-receipt')">Close</button>
-      <button class="btn btn-ghost btn-sm" onclick="window.print()">Print</button>
+      <button class="btn btn-ghost btn-sm" onclick="A.printReceipt()">Print</button>
       <button class="btn btn-primary btn-sm" onclick="A.dlReceipt()">Download CSV</button>
     </div>
   </div>
@@ -3841,6 +3841,42 @@ class App {
   }
 
   dlReceipt(){ if(!this._rcpt) return; const {p,c}=this._rcpt; const inv=INV.totals(),total=(p.fuel==='Petrol'?inv.petrolTotal:inv.dieselTotal)||0; this._csv([['Receipt','Date','Customer','Vehicle','Fuel','Litres','% of Stock','Price/L','Total'],[p.id.slice(-8),p.date,c.name,c.car,p.fuel,p.litres,total?F.pct(p.litres,total):'N/A',p.ppl,p.total.toFixed(2)]],`receipt_${p.id.slice(-8)}`); }
+
+  printReceipt(){
+    const content = document.getElementById('receipt-content')?.innerHTML;
+    if(!content) return;
+    const win = window.open('','_blank','width=420,height=640');
+    win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <title>Receipt</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#111;padding:24px;max-width:380px;margin:0 auto}
+    .receipt{width:100%}
+    .receipt-logo{text-align:center;margin-bottom:1rem}
+    .receipt-logo-name{font-size:1rem;font-weight:900;letter-spacing:-.03em;color:#111}
+    .receipt-logo-sub{font-size:.68rem;color:#888;margin-top:.15rem}
+    .receipt-hr{border:none;border-top:1px dashed #ccc;margin:.75rem 0}
+    .rrow{display:flex;justify-content:space-between;align-items:center;padding:.22rem 0;font-size:.78rem}
+    .rkey{color:#666;font-weight:500}
+    .rval{font-weight:600;color:#111;text-align:right;max-width:60%}
+    .rtotal{display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;font-size:.95rem;font-weight:800;color:#111}
+    .rtotal .rkey{color:#111;font-weight:800}
+    .receipt-pct-row{display:flex;justify-content:space-between;align-items:center;padding:.2rem 0;font-size:.75rem;margin-top:.25rem}
+    .receipt-pct-badge{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:99px;padding:.15rem .55rem;font-size:.7rem;font-weight:700}
+    .receipt-footer{text-align:center;font-size:.68rem;color:#888;margin-top:1rem;line-height:1.6}
+    @media print{body{padding:0} @page{margin:10mm}}
+  </style>
+</head>
+<body>
+  ${content}
+  <script>window.onload=function(){window.print();window.onafterprint=function(){window.close();}}<\/script>
+</body>
+</html>`);
+    win.document.close();
+  }
 
   /* ── EDIT PURCHASE ── */
   openEP(id){
