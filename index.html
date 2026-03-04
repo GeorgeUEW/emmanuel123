@@ -722,6 +722,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   font-weight: 400;
 }
 .ph-right { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+.dash-action-row { display: flex; gap: .5rem; align-items: center; }
 
 /* ══ DATE RANGE ══ */
 .date-range {
@@ -1693,9 +1694,38 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   .kpi-grid { grid-template-columns: 1fr 1fr; gap: .6rem; }
   .fg { grid-template-columns: 1fr; }
   .ph { flex-direction: column; align-items: flex-start; gap: .75rem; }
-  .ph-right { width: 100%; }
-  .date-range { flex: 1; }
-  .date-range input[type="date"] { width: 90px; font-size: 12px; }
+  .ph-right {
+    width: 100%;
+    flex-direction: column;
+    gap: .6rem;
+  }
+  /* Mobile date range — full width card style */
+  .date-range {
+    width: 100%;
+    flex: unset;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: .55rem .75rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    box-shadow: var(--shadow-xs);
+  }
+  .date-range svg { width: 14px; height: 14px; color: var(--brand); flex-shrink: 0; }
+  .date-range input[type="date"] {
+    flex: 1;
+    width: auto;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--t1);
+    min-width: 0;
+  }
+  .date-range span { font-size: .75rem; color: var(--t4); flex-shrink: 0; }
+  /* Mobile action buttons row */
+  .ph-right .btn { flex: 1; justify-content: center; font-size: .78rem; }
+  .dash-action-row { width: 100%; }
+  .dash-action-row .btn { flex: 1; justify-content: center; }
   .page-wrap { padding: .85rem; }
 
   /* Better table overflow */
@@ -2184,11 +2214,16 @@ textarea.form-input { resize: vertical; min-height: 70px; }
               <span>—</span>
               <input type="date" id="d-to"/>
             </div>
-            <button class="btn btn-secondary btn-sm" id="d-reset">This Month</button>
-            <button class="btn btn-primary btn-sm" onclick="A.nav('record')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              New Sale
-            </button>
+            <div class="dash-action-row">
+              <button class="btn btn-secondary btn-sm" id="d-reset">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.13"/></svg>
+                Reset
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="A.nav('record')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                New Sale
+              </button>
+            </div>
           </div>
         </div>
         <div class="kpi-grid" id="d-kpis"></div>
@@ -3315,10 +3350,18 @@ class App {
   }
 
   _initRange(){
-    const now=new Date(), y=now.getFullYear(), m=now.getMonth();
-    const f=`${y}-${String(m+1).padStart(2,'0')}-01`;
-    const ld=new Date(y,m+1,0);
-    const t=`${y}-${String(m+1).padStart(2,'0')}-${String(ld.getDate()).padStart(2,'0')}`;
+    const purchases = DB.get('_purchases', []);
+    const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+    const ld = new Date(y, m+1, 0);
+    const t = `${y}-${String(m+1).padStart(2,'0')}-${String(ld.getDate()).padStart(2,'0')}`;
+    // Start from first purchase date, or start of current month if no purchases
+    let f;
+    if(purchases.length){
+      const sorted = purchases.slice().sort((a,b)=>a.date.localeCompare(b.date));
+      f = sorted[0].date;
+    } else {
+      f = `${y}-${String(m+1).padStart(2,'0')}-01`;
+    }
     this.dFrom=f; this.dTo=t;
     document.getElementById('d-from').value=f;
     document.getElementById('d-to').value=t;
