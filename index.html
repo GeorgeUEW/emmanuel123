@@ -2,13 +2,19 @@
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
-<!-- Kill any stale service worker caches immediately -->
+<!-- Kill any stale service worker caches and force fresh load -->
 <script>
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.getRegistrations().then(regs=>{
-    regs.forEach(r=>r.unregister());
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    if(regs.length > 0){
+      Promise.all(regs.map(function(r){ return r.unregister(); }))
+        .then(function(){ return caches.keys(); })
+        .then(function(keys){ return Promise.all(keys.map(function(k){ return caches.delete(k); })); })
+        .then(function(){ window.location.reload(true); });
+    } else {
+      caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k); }); });
+    }
   });
-  caches.keys().then(keys=>keys.forEach(k=>caches.delete(k)));
 }
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -5328,6 +5334,7 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
     }
     if(thresh.diesel>0 && dRem<=thresh.diesel){
       this._pushNotif('low-diesel',`⚠️ Diesel Stock Low`,`Only ${Math.round(dRem).toLocaleString()} L remaining — threshold is ${thresh.diesel.toLocaleString()} L. Restock soon.`,'danger');
+    }
   }
 
   _pushNotif(id, title, body, level='warn'){
