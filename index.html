@@ -6282,9 +6282,16 @@ document.addEventListener('DOMContentLoaded',()=>{
   const isInStandalone = window.navigator.standalone === true
     || window.matchMedia('(display-mode: standalone)').matches;
 
-  // Register Service Worker
+  // Register Service Worker — force update on new version
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js', { scope: '/emmanuel123/' }).catch(()=>{});
+    navigator.serviceWorker.register('./sw.js', { scope: '/emmanuel123/' }).then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if(newWorker.state === 'activated') window.location.reload();
+        });
+      });
+    }).catch(()=>{});
   }
 
   // Don't show if already installed or dismissed this session
