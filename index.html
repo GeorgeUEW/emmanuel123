@@ -383,6 +383,35 @@ select.form-input option { background: var(--surface); color: var(--t1); }
 textarea.form-input { resize: vertical; min-height: 70px; }
 .form-input.error { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(239,68,68,.1); }
 
+/* ══ PASSWORD TOGGLE ══ */
+.pw-wrap {
+  position: relative;
+}
+.pw-wrap .form-input {
+  padding-right: 2.6rem;
+}
+.pw-toggle {
+  position: absolute;
+  right: .65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--t4);
+  padding: .2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color .15s;
+  border-radius: var(--radius-xs);
+}
+.pw-toggle:hover { color: var(--t2); }
+.pw-toggle svg { width: 16px; height: 16px; pointer-events: none; }
+.pw-toggle .eye-off { display: none; }
+.pw-toggle.visible .eye-on { display: none; }
+.pw-toggle.visible .eye-off { display: block; }
+
 .login-err {
   display: none;
   padding: .55rem .75rem;
@@ -1828,8 +1857,8 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     <div class="lp-top">
       <div class="lp-brand">
         <div class="lp-brand-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M14 14h7v7h-7z"/><path d="M3 14h7v7H3z"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2C12 2 5 9 5 14a7 7 0 0 0 14 0c0-5-7-12-7-12z"/>
           </svg>
         </div>
         <div class="lp-brand-name">Emmanuel's Tracking System</div>
@@ -1848,7 +1877,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
           <div class="lp-feat-desc">Full history, fuel split & purchase analytics</div>
         </div>
         <div class="lp-feat">
-          <div class="lp-feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+          <div class="lp-feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
           <div class="lp-feat-title">Live KPI Dashboard</div>
           <div class="lp-feat-desc">Date-range KPIs, charts & top customers</div>
         </div>
@@ -1867,7 +1896,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
       <!-- MOBILE BRAND HEADER (visible only on mobile) -->
       <div class="mobile-brand-header" style="display:none">
         <div class="mobile-brand-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C12 2 5 9 5 14a7 7 0 0 0 14 0c0-5-7-12-7-12z"/></svg>
         </div>
         <div class="mobile-brand-text">
           <div class="mb-name">Emmanuel's</div>
@@ -1887,7 +1916,13 @@ textarea.form-input { resize: vertical; min-height: 70px; }
           </div>
           <div class="form-field">
             <label class="form-label" for="l-pass">Password</label>
-            <input class="form-input" type="password" id="l-pass" placeholder="Enter password" autocomplete="current-password"/>
+            <div class="pw-wrap">
+              <input class="form-input" type="password" id="l-pass" placeholder="Enter password" autocomplete="current-password"/>
+              <button type="button" class="pw-toggle" id="l-pass-toggle" aria-label="Toggle password visibility">
+                <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
           </div>
           <div id="l-err" class="login-err">Incorrect username or password.</div>
           <button type="submit" class="btn btn-primary btn-full">Sign In</button>
@@ -1911,21 +1946,33 @@ textarea.form-input { resize: vertical; min-height: 70px; }
           </div>
           <div class="form-field">
             <label class="form-label" for="r-pwd">Password *</label>
-            <input class="form-input" type="password" id="r-pwd" placeholder="Min. 6 characters"/>
+            <div class="pw-wrap">
+              <input class="form-input" type="password" id="r-pwd" placeholder="Min. 6 characters"/>
+              <button type="button" class="pw-toggle" id="r-pwd-toggle" aria-label="Toggle password visibility">
+                <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
           </div>
           <div class="form-field">
             <label class="form-label" for="r-cpwd">Confirm Password *</label>
-            <input class="form-input" type="password" id="r-cpwd" placeholder="Repeat password"/>
+            <div class="pw-wrap">
+              <input class="form-input" type="password" id="r-cpwd" placeholder="Repeat password"/>
+              <button type="button" class="pw-toggle" id="r-cpwd-toggle" aria-label="Toggle confirm password visibility">
+                <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
           </div>
           <div class="form-field">
             <label class="form-label">Select Role</label>
             <div class="role-cards">
               <div class="role-card selected" data-role="staff" id="role-staff">
-                <div class="role-card-title">&#128100; Staff</div>
+                <div class="role-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:4px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Staff</div>
                 <div class="role-card-desc">Record sales, view reports</div>
               </div>
               <div class="role-card" data-role="admin" id="role-admin">
-                <div class="role-card-title">&#128737; Admin</div>
+                <div class="role-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:4px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Admin</div>
                 <div class="role-card-desc">Full access + manage users</div>
               </div>
             </div>
@@ -1977,7 +2024,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
       <!-- Brand row -->
       <div class="sb-brand-row">
         <div class="sb-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C12 2 5 9 5 14a7 7 0 0 0 14 0c0-5-7-12-7-12z"/></svg>
         </div>
         <div>
           <div class="sb-name">Emmanuel's</div>
@@ -2001,7 +2048,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
       <div class="nav-section">
         <div class="nav-label">Overview</div>
         <div class="nav-item active" data-page="dashboard">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
           Dashboard
         </div>
         <div class="nav-item" data-page="inventory">
@@ -2332,7 +2379,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
           </div>
           <div class="ph-right">
             <div class="period-sel">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C12 2 5 9 5 14a7 7 0 0 0 14 0c0-5-7-12-7-12z"/></svg>
               <select id="y-year"></select>
             </div>
             <button class="btn btn-secondary btn-sm" id="exp-yearly-btn">Export</button>
@@ -2881,11 +2928,11 @@ textarea.form-input { resize: vertical; min-height: 70px; }
         <label class="form-label">Role</label>
         <div class="role-cards">
           <div class="role-card selected" data-eurole="staff" id="eu-role-staff">
-            <div class="role-card-title">&#128100; Staff</div>
+            <div class="role-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:4px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Staff</div>
             <div class="role-card-desc">Record sales, view reports</div>
           </div>
           <div class="role-card" data-eurole="admin" id="eu-role-admin">
-            <div class="role-card-title">&#128737; Admin</div>
+            <div class="role-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:4px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Admin</div>
             <div class="role-card-desc">Full access + manage users</div>
           </div>
         </div>
@@ -2970,7 +3017,20 @@ class App {
       document.getElementById('auth-signin').style.display='flex';
     };
 
-    // Role card selection on register form (use onclick to avoid stacking)
+    // Password visibility toggles
+    const _pwToggle=(inputId, btnId)=>{
+      const inp=document.getElementById(inputId);
+      const btn=document.getElementById(btnId);
+      if(!inp||!btn) return;
+      btn.addEventListener('click',()=>{
+        const visible=inp.type==='text';
+        inp.type=visible?'password':'text';
+        btn.classList.toggle('visible',!visible);
+      });
+    };
+    _pwToggle('l-pass','l-pass-toggle');
+    _pwToggle('r-pwd','r-pwd-toggle');
+    _pwToggle('r-cpwd','r-cpwd-toggle');
     document.querySelectorAll('.role-card[data-role]').forEach(c=>{
       c.onclick=()=>{
         document.querySelectorAll('.role-card[data-role]').forEach(x=>x.classList.remove('selected'));
@@ -3203,7 +3263,7 @@ class App {
       this._kpi('Petrol',F.n2(pL)+' L','kpi-icon','background:var(--petrol-bg);color:var(--petrol)',F.pct(pL,tL)+' of fuel sold','var(--petrol)',F.pctN(pL,tL),'<circle cx="12" cy="12" r="10"/>')+
       this._kpi('Diesel',F.n2(dL)+' L','kpi-icon','background:var(--diesel-bg);color:var(--diesel)',F.pct(dL,tL)+' of fuel sold','var(--diesel)',F.pctN(dL,tL),'<rect x="2" y="3" width="20" height="14" rx="2"/>')+
       this._kpi('Customers',custs,'kpi-icon','background:var(--info-bg);color:var(--info)',`${tx} total transactions`,'var(--info)',0,'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>')+
-      this._kpi('Avg Sale',tx?F.money(rev/tx):'—','kpi-icon','background:var(--brand-lt);color:var(--brand)','Per transaction average','var(--brand)',0,'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>');
+      this._kpi('Avg Sale',tx?F.money(rev/tx):'—','kpi-icon','background:var(--brand-lt);color:var(--brand)','Per transaction average','var(--brand)',0,'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>');
     this._donut('d-donut',pL,dL); document.getElementById('d-dval').textContent=F.n2(tL)+'L'; this._dlegend('d-dleg',pL,dL,tL);
     const tD=f?new Date(f+'T00:00:00'):new Date(); this._trend('d-trend',arr,tD.getMonth(),tD.getFullYear());
     const cm=this._cmap();
