@@ -1,0 +1,35 @@
+{
+  "name": "Emmanuel's Fuel Tracking System",
+  "short_name": "Fuel Tracker",
+  "description": "Professional fuel inventory management — real-time stock, customer analytics & business intelligence.",
+  "start_url": "/emmanuel123/",
+  "scope": "/emmanuel123/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#1a1a2e",
+  "theme_color": "#F97316",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%23F97316'/><path d='M96 24C96 24 54 66 54 96a42 42 0 0 0 84 0c0-30-42-72-42-72z' fill='none' stroke='white' stroke-width='14' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23F97316'/><path d='M256 64C256 64 144 176 144 256a112 112 0 0 0 224 0c0-80-112-192-112-192z' fill='none' stroke='white' stroke-width='36' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "og-image.png",
+      "sizes": "600x315",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Dashboard Overview"
+    }
+  ]
+}
