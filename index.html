@@ -2050,46 +2050,48 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 <body>
 
 <!-- ══ PWA INSTALL BANNER ══ -->
-<div id="pwa-banner" role="banner" aria-label="Install App">
-  <div class="pwa-icon">
-    <svg viewBox="0 0 24 24"><path d="M12 2C12 2 5 9 5 14a7 7 0 0 0 14 0c0-5-7-12-7-12z"/></svg>
+<div id="pwa-banner" role="banner" aria-label="Install App" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;padding:.85rem 1rem;background:#1a1a2e;border-top:1px solid rgba(249,115,22,.3);box-shadow:0 -8px 32px rgba(0,0,0,.35);align-items:center;gap:.85rem;-webkit-tap-highlight-color:transparent;">
+  <div style="width:46px;height:46px;background:#f97316;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 0 4px rgba(249,115,22,.2);">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><path d="M12 2C12 2 5 9 5 14a7 7 0 0 0 14 0c0-5-7-12-7-12z"/></svg>
   </div>
-  <div class="pwa-text">
-    <div class="pwa-title">Install Fuel Tracker</div>
-    <div class="pwa-sub">Add to home screen for the full app experience</div>
+  <div style="flex:1;min-width:0;">
+    <div style="font-size:.82rem;font-weight:800;color:#fff;letter-spacing:-.02em;">Install Fuel Tracker</div>
+    <div style="font-size:.68rem;color:rgba(255,255,255,.5);margin-top:2px;">Add to home screen for the full app experience</div>
   </div>
-  <div class="pwa-actions">
-    <button class="pwa-install-btn" id="pwa-install-btn">Install App</button>
-    <button class="pwa-close-btn" id="pwa-close-btn" aria-label="Dismiss">
-      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  <div style="display:flex;gap:.5rem;flex-shrink:0;">
+    <button id="pwa-install-btn" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:.5rem .95rem;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">Install App</button>
+    <button id="pwa-close-btn" aria-label="Dismiss" style="width:32px;height:32px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
 </div>
 
 <!-- ══ iOS INSTALL INSTRUCTIONS ══ -->
-<div id="pwa-ios">
-  <button class="pwa-ios-close" id="pwa-ios-close">
-    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+<div id="pwa-ios" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;background:#1a1a2e;border-top:1px solid rgba(249,115,22,.3);border-radius:20px 20px 0 0;padding:1.25rem 1.25rem 2rem;box-shadow:0 -8px 40px rgba(0,0,0,.4);">
+  <button id="pwa-ios-close" style="position:absolute;top:1rem;right:1rem;width:28px;height:28px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
   </button>
-  <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem">
-    <div class="pwa-icon"><svg viewBox="0 0 24 24"><path d="M12 2C12 2 5 9 5 14a7 7 0 0 0 14 0c0-5-7-12-7-12z"/></svg></div>
+  <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">
+    <div style="width:46px;height:46px;background:#f97316;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><path d="M12 2C12 2 5 9 5 14a7 7 0 0 0 14 0c0-5-7-12-7-12z"/></svg>
+    </div>
     <div>
-      <div class="pwa-ios-title">Install Fuel Tracker</div>
-      <div class="pwa-ios-sub">Add this app to your iPhone home screen</div>
+      <div style="font-size:.88rem;font-weight:800;color:#fff;">Install Fuel Tracker</div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,.5);margin-top:2px;">Add this app to your iPhone home screen</div>
     </div>
   </div>
-  <div class="pwa-ios-steps">
-    <div class="pwa-ios-step">
-      <div class="pwa-ios-num">1</div>
-      <div class="pwa-ios-text">Tap the <strong>Share</strong> button at the bottom of your browser <strong>⎙</strong></div>
+  <div style="display:flex;flex-direction:column;gap:.65rem;">
+    <div style="display:flex;align-items:center;gap:.75rem;">
+      <div style="width:26px;height:26px;background:#f97316;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;color:#fff;flex-shrink:0;">1</div>
+      <div style="font-size:.75rem;color:rgba(255,255,255,.75);line-height:1.4;">Tap the <strong style="color:#fff;">Share</strong> button at the bottom of Safari ⎙</div>
     </div>
-    <div class="pwa-ios-step">
-      <div class="pwa-ios-num">2</div>
-      <div class="pwa-ios-text">Scroll down and tap <strong>"Add to Home Screen"</strong></div>
+    <div style="display:flex;align-items:center;gap:.75rem;">
+      <div style="width:26px;height:26px;background:#f97316;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;color:#fff;flex-shrink:0;">2</div>
+      <div style="font-size:.75rem;color:rgba(255,255,255,.75);line-height:1.4;">Scroll down and tap <strong style="color:#fff;">"Add to Home Screen"</strong></div>
     </div>
-    <div class="pwa-ios-step">
-      <div class="pwa-ios-num">3</div>
-      <div class="pwa-ios-text">Tap <strong>"Add"</strong> — the app icon will appear on your home screen</div>
+    <div style="display:flex;align-items:center;gap:.75rem;">
+      <div style="width:26px;height:26px;background:#f97316;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;color:#fff;flex-shrink:0;">3</div>
+      <div style="font-size:.75rem;color:rgba(255,255,255,.75);line-height:1.4;">Tap <strong style="color:#fff;">"Add"</strong> — the app icon will appear on your home screen</div>
     </div>
   </div>
 </div>
@@ -5199,66 +5201,67 @@ document.addEventListener('DOMContentLoaded',()=>A.init());
 <script>
 (function(){
   const DISMISSED_KEY = 'pwa_banner_dismissed';
-  const banner  = document.getElementById('pwa-banner');
-  const iosPanel= document.getElementById('pwa-ios');
+  const banner   = document.getElementById('pwa-banner');
+  const iosPanel = document.getElementById('pwa-ios');
   let deferredPrompt = null;
 
-  // ── Detect iOS ──
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  // Detect iOS Safari specifically (not Chrome on iOS)
+  const ua = navigator.userAgent;
+  const isIOS = /iphone|ipad|ipod/i.test(ua) && !/crios|fxios/i.test(ua);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
   const isInStandalone = window.navigator.standalone === true
     || window.matchMedia('(display-mode: standalone)').matches;
 
   // Register Service Worker
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js', { scope: '/emmanuel123/' })
-      .catch(()=>{}); // Silent fail if offline or path issue
+    navigator.serviceWorker.register('./sw.js', { scope: '/emmanuel123/' }).catch(()=>{});
   }
 
-  // Don't show if already installed or previously dismissed
+  // Don't show if already installed or dismissed this session
   if(isInStandalone || sessionStorage.getItem(DISMISSED_KEY)) return;
 
-  // ── Android/Chrome/Edge: capture beforeinstallprompt ──
+  // ── Android / Chrome / Edge: native install prompt ──
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     deferredPrompt = e;
-    setTimeout(()=> banner.classList.add('show'), 2500);
+    setTimeout(()=>{
+      banner.style.display = 'flex';
+    }, 2500);
   });
 
-  // ── iOS Safari: show manual instructions ──
-  if(isIOS && !isInStandalone){
+  // ── iOS Safari only: show manual instructions ──
+  if(isIOS && isSafari && !isInStandalone){
     setTimeout(()=>{
-      iosPanel.classList.add('show');
+      iosPanel.style.display = 'block';
     }, 2500);
   }
 
-  // Install button clicked
+  // Install button
   document.getElementById('pwa-install-btn').addEventListener('click', async () => {
     if(!deferredPrompt) return;
-    banner.classList.remove('show');
+    banner.style.display = 'none';
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     deferredPrompt = null;
-    if(outcome === 'accepted'){
-      sessionStorage.setItem(DISMISSED_KEY, '1');
-    }
+    if(outcome === 'accepted') sessionStorage.setItem(DISMISSED_KEY, '1');
   });
 
-  // Close/dismiss banner
+  // Close banner
   document.getElementById('pwa-close-btn').addEventListener('click', () => {
-    banner.classList.remove('show');
+    banner.style.display = 'none';
     sessionStorage.setItem(DISMISSED_KEY, '1');
   });
 
   // Close iOS panel
   document.getElementById('pwa-ios-close').addEventListener('click', () => {
-    iosPanel.classList.remove('show');
+    iosPanel.style.display = 'none';
     sessionStorage.setItem(DISMISSED_KEY, '1');
   });
 
-  // Hide banner once installed
+  // Hide once installed
   window.addEventListener('appinstalled', () => {
-    banner.classList.remove('show');
-    iosPanel.classList.remove('show');
+    banner.style.display = 'none';
+    iosPanel.style.display = 'none';
     deferredPrompt = null;
   });
 })();
