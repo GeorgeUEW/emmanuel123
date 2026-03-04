@@ -1921,6 +1921,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 .sms-result.fail  { background: var(--danger-bg); color: var(--danger); border-color: var(--danger-bdr); }
 .sms-result.show  { display: block; }
 </style>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -2422,12 +2423,12 @@ textarea.form-input { resize: vertical; min-height: 70px; }
               <select id="m-year"></select>
             </div>
             <button class="btn btn-secondary btn-sm" id="exp-monthly-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Export
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Excel
             </button>
-            <button class="btn btn-ghost btn-sm" onclick="window.print()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-              Print
+            <button class="btn btn-ghost btn-sm" id="exp-monthly-pdf-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              PDF
             </button>
           </div>
         </div>
@@ -2507,7 +2508,14 @@ textarea.form-input { resize: vertical; min-height: 70px; }
             <div class="ph-sub">Complete transaction log with search and filters</div>
           </div>
           <div class="ph-right">
-            <button class="btn btn-secondary btn-sm" id="exp-hist-btn">Export CSV</button>
+            <button class="btn btn-secondary btn-sm" id="exp-hist-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Excel
+            </button>
+            <button class="btn btn-ghost btn-sm" id="exp-hist-pdf-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              PDF
+            </button>
           </div>
         </div>
         <div class="filter-row">
@@ -3412,11 +3420,13 @@ class App {
     document.getElementById('h-to').addEventListener('change',()=>{ this.hPage=1; this.renderHist(); });
     document.getElementById('h-reset').addEventListener('click',()=>{ ['h-q','h-fuel','h-month','h-from','h-to'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; }); this.hPage=1; this.renderHist(); });
     document.getElementById('exp-hist-btn').addEventListener('click',()=>this.expHist());
+    document.getElementById('exp-hist-pdf-btn').addEventListener('click',()=>this.expHistPDF());
 
     // Monthly/Yearly
     ['m-month','m-year'].forEach(id=>document.getElementById(id).addEventListener('change',()=>this.renderMonthly()));
     document.getElementById('y-year').addEventListener('change',()=>this.renderYearly());
     document.getElementById('exp-monthly-btn').addEventListener('click',()=>this.expMonthly());
+    document.getElementById('exp-monthly-pdf-btn').addEventListener('click',()=>this.expMonthlyPDF());
     document.getElementById('exp-yearly-btn').addEventListener('click',()=>this.expYearly());
 
     // Inventory
@@ -4114,7 +4124,246 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
     </tr>`; }).join('');
   }
 
-  expMonthly(){ const mo=+document.getElementById('m-month').value, yr=+document.getElementById('m-year').value; const ps=DB.get('_purchases',[]).filter(p=>{ const d=new Date(p.date+'T00:00:00'); return d.getMonth()===mo&&d.getFullYear()===yr; }); const cm=this._cmap(); const rows=[['Date','Customer','Vehicle','Fuel','Litres','% of Stock','Price/L','Total']]; ps.sort((a,b)=>a.date.localeCompare(b.date)).forEach(p=>{ const c=cm[p.cid]||{name:'?',car:'?'}; rows.push([p.date,c.name,c.car,p.fuel,p.litres,INV.pct(p.litres,p.fuel),p.ppl,p.total.toFixed(2)]); }); this._csv(rows,`monthly_${MS[mo]}_${yr}`); this._audit('create',`Exported monthly: ${MF[mo]} ${yr}`); }
+  // ── SHARED EXCEL HELPER ──
+  _xlsxDownload(rows, summaryRows, sheetName, filename){
+    const WB = XLSX.utils.book_new();
+
+    // ── Main data sheet ──
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const hdrStyle = { font:{bold:true,color:{rgb:'FFFFFF'},name:'Arial',sz:10}, fill:{fgColor:{rgb:'1A1A2E'}}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border:{bottom:{style:'medium',color:{rgb:'F97316'}}} };
+    const altStyle = { fill:{fgColor:{rgb:'F9FAFB'}}, font:{name:'Arial',sz:9}, alignment:{horizontal:'left',vertical:'center'} };
+    const normStyle = { fill:{fgColor:{rgb:'FFFFFF'}}, font:{name:'Arial',sz:9}, alignment:{horizontal:'left',vertical:'center'} };
+    const numStyle  = { fill:{fgColor:{rgb:'FFFFFF'}}, font:{name:'Arial',sz:9}, alignment:{horizontal:'right',vertical:'center'}, numFmt:'#,##0.00' };
+    const totalStyle= { font:{bold:true,name:'Arial',sz:10,color:{rgb:'1A1A2E'}}, fill:{fgColor:{rgb:'FFF7ED'}}, border:{top:{style:'medium',color:{rgb:'F97316'}}}, alignment:{horizontal:'right',vertical:'center'} };
+
+    const range = XLSX.utils.decode_range(ws['!ref']||'A1');
+    for(let R=range.s.r; R<=range.e.r; R++){
+      for(let C=range.s.c; C<=range.e.c; C++){
+        const addr = XLSX.utils.encode_cell({r:R,c:C});
+        if(!ws[addr]) ws[addr]={t:'z',v:''};
+        if(R===0){ ws[addr].s = hdrStyle; }
+        else { ws[addr].s = (C>=4 && C<=7) ? numStyle : (R%2===0 ? altStyle : normStyle); }
+      }
+    }
+
+    // Summary sheet
+    if(summaryRows && summaryRows.length){
+      const ws2 = XLSX.utils.aoa_to_sheet(summaryRows);
+      const sr = XLSX.utils.decode_range(ws2['!ref']||'A1');
+      for(let R=sr.s.r; R<=sr.e.r; R++){
+        for(let C=sr.s.c; C<=sr.e.c; C++){
+          const addr=XLSX.utils.encode_cell({r:R,c:C});
+          if(!ws2[addr]) ws2[addr]={t:'z',v:''};
+          ws2[addr].s = R===0 ? hdrStyle : (R===summaryRows.length-1 ? totalStyle : (R%2===0?altStyle:normStyle));
+        }
+      }
+      ws2['!cols']=[{wch:28},{wch:16},{wch:16},{wch:16},{wch:16}];
+      XLSX.utils.book_append_sheet(WB, ws2, 'Summary');
+    }
+
+    // Auto column widths
+    const cols = rows[0]?.map((_,ci)=>({ wch: Math.min(36, Math.max(12, ...rows.map(r=>String(r[ci]||'').length))) })) || [];
+    ws['!cols'] = cols;
+    ws['!rows'] = [{hpt:22}]; // header row height
+
+    XLSX.utils.book_append_sheet(WB, ws, sheetName);
+    XLSX.writeFile(WB, filename+'.xlsx');
+  }
+
+  // ── SHARED PDF REPORT HELPER ──
+  _reportPDF(title, subtitle, columns, rows, summaryItems, filename){
+    const prefs = DB.get('_prefs',{currency:'GHS'});
+    const cur = prefs.currency||'GHS';
+    const now = new Date().toLocaleString('en-GB',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+    const tableRows = rows.map((r,i)=>`
+      <tr style="background:${i%2===0?'#ffffff':'#f9fafb'}">
+        ${r.map((v,ci)=>`<td style="padding:7px 10px;font-size:.72rem;color:#374151;border-bottom:1px solid #f3f4f6;text-align:${ci>=4&&ci<=7?'right':'left'}">${v}</td>`).join('')}
+      </tr>`).join('');
+
+    const summaryHTML = summaryItems.map(s=>`
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:14px 18px;flex:1;min-width:120px">
+        <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af;margin-bottom:4px">${s.label}</div>
+        <div style="font-size:1.1rem;font-weight:900;color:#111;letter-spacing:-.03em">${s.value}</div>
+        ${s.sub?`<div style="font-size:.68rem;color:#9ca3af;margin-top:2px">${s.sub}</div>`:''}
+      </div>`).join('');
+
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>${title}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f5;padding:32px 20px;color:#111}
+  .page{background:#fff;max-width:900px;margin:0 auto;border-radius:12px;overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,.1)}
+  .hd{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);padding:28px 36px;position:relative;overflow:hidden}
+  .hd::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;background:radial-gradient(circle,rgba(249,115,22,.3) 0%,transparent 65%)}
+  .hd-inner{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start}
+  .hd-logo{display:flex;align-items:center;gap:10px}
+  .hd-icon{width:36px;height:36px;background:#f97316;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .hd-icon svg{width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round}
+  .hd-name{font-size:1rem;font-weight:800;color:#fff;letter-spacing:-.03em}
+  .hd-sub{font-size:.67rem;color:rgba(255,255,255,.45);margin-top:2px}
+  .hd-meta{text-align:right}
+  .hd-title{font-size:.75rem;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em}
+  .hd-date{font-size:.65rem;color:rgba(255,255,255,.45);margin-top:3px}
+  .summary{display:flex;gap:12px;flex-wrap:wrap;padding:20px 36px;background:#f9fafb;border-bottom:1px solid #e5e7eb}
+  .body{padding:0 36px 28px}
+  table{width:100%;border-collapse:collapse;margin-top:20px}
+  thead tr{background:#1a1a2e}
+  thead th{padding:10px 10px;font-size:.68rem;font-weight:700;color:#fff;text-align:left;text-transform:uppercase;letter-spacing:.06em;border-bottom:3px solid #f97316;white-space:nowrap}
+  thead th:nth-child(n+5){text-align:right}
+  .ft{background:#f9fafb;border-top:1px solid #e5e7eb;padding:14px 36px;display:flex;justify-content:space-between;align-items:center}
+  .ft-brand{font-size:.7rem;font-weight:700;color:#374151}
+  .ft-msg{font-size:.65rem;color:#9ca3af}
+  @media print{
+    *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+    body{background:#fff!important;padding:0!important}
+    .page{box-shadow:none!important;border-radius:0!important;max-width:100%!important}
+    @page{margin:0;size:A4 landscape}
+  }
+</style></head><body>
+<div class="page">
+  <div class="hd">
+    <div class="hd-inner">
+      <div class="hd-logo">
+        <div class="hd-icon"><svg viewBox="0 0 24 24"><path d="M12 2C12 2 5 9 5 14a7 7 0 0 0 14 0c0-5-7-12-7-12z"/></svg></div>
+        <div><div class="hd-name">Emmanuel's Fuel Station</div><div class="hd-sub">${subtitle}</div></div>
+      </div>
+      <div class="hd-meta">
+        <div class="hd-title">${title}</div>
+        <div class="hd-date">Generated: ${now}</div>
+      </div>
+    </div>
+  </div>
+  <div class="summary">${summaryHTML}</div>
+  <div class="body">
+    <table>
+      <thead><tr>${columns.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+  </div>
+  <div class="ft">
+    <div><div class="ft-brand">Emmanuel's Fuel Tracking System</div><div class="ft-msg">Confidential — For internal use only</div></div>
+    <div style="font-size:.65rem;color:#9ca3af">Total records: ${rows.length}</div>
+  </div>
+</div>
+<script>
+  window.onload=function(){setTimeout(function(){window.print();},400);window.onafterprint=function(){window.close();};};
+<\/script>
+</body></html>`;
+
+    // Use hidden iframe — no popup blocker
+    let ifr=document.getElementById('_print_frame');
+    if(!ifr){ifr=document.createElement('iframe');ifr.id='_print_frame';ifr.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1100px;height:800px;border:none';document.body.appendChild(ifr);}
+    const doc=ifr.contentDocument||ifr.contentWindow.document;
+    doc.open();doc.write(html);doc.close();
+    setTimeout(()=>{try{ifr.contentWindow.focus();ifr.contentWindow.print();}catch(e){
+      // Fallback: download as HTML for manual print-to-PDF
+      const blob=new Blob([html],{type:'text/html'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename+'.html';a.click();
+      this.toast('Saved as HTML — open and print to PDF');
+    }},700);
+  }
+
+  expMonthly(){
+    const mo=+document.getElementById('m-month').value, yr=+document.getElementById('m-year').value;
+    const ps=DB.get('_purchases',[]).filter(p=>{ const d=new Date(p.date+'T00:00:00'); return d.getMonth()===mo&&d.getFullYear()===yr; });
+    const cm=this._cmap();
+    const prefs=DB.get('_prefs',{currency:'GHS'}); const cur=prefs.currency||'GHS';
+    const sorted=ps.slice().sort((a,b)=>a.date.localeCompare(b.date));
+
+    // Summary
+    const totLitres=sorted.reduce((s,p)=>s+p.litres,0);
+    const totRev=sorted.reduce((s,p)=>s+p.total,0);
+    const petrolL=sorted.filter(p=>p.fuel==='Petrol').reduce((s,p)=>s+p.litres,0);
+    const dieselL=sorted.filter(p=>p.fuel==='Diesel').reduce((s,p)=>s+p.litres,0);
+
+    const dataRows=[['Date','Customer','Vehicle','Fuel Type','Litres','Unit Price ('+cur+')','Total ('+cur+')','Notes']];
+    sorted.forEach((p,i)=>{ const c=cm[p.cid]||{name:'?',car:'?'}; dataRows.push([p.date,c.name,c.car,p.fuel,p.litres,+p.ppl,+p.total.toFixed(2),p.notes||'']); });
+    // Totals row
+    dataRows.push(['','','','TOTAL',totLitres,'',+totRev.toFixed(2),'']);
+
+    const summaryRows=[
+      ['Metric','Value'],
+      ['Month',`${MF[mo]} ${yr}`],
+      ['Total Transactions',sorted.length],
+      ['Total Litres Sold',totLitres.toFixed(2)],
+      ['Petrol Litres',petrolL.toFixed(2)],
+      ['Diesel Litres',dieselL.toFixed(2)],
+      ['Total Revenue ('+cur+')',totRev.toFixed(2)],
+    ];
+
+    this._xlsxDownload(dataRows, summaryRows, `${MF[mo]} ${yr}`, `Monthly_Report_${MF[mo]}_${yr}`);
+    this._audit('create',`Exported monthly Excel: ${MF[mo]} ${yr}`);
+  }
+
+  expMonthlyPDF(){
+    const mo=+document.getElementById('m-month').value, yr=+document.getElementById('m-year').value;
+    const ps=DB.get('_purchases',[]).filter(p=>{ const d=new Date(p.date+'T00:00:00'); return d.getMonth()===mo&&d.getFullYear()===yr; });
+    const cm=this._cmap();
+    const prefs=DB.get('_prefs',{currency:'GHS'}); const cur=prefs.currency||'GHS';
+    const sorted=ps.slice().sort((a,b)=>a.date.localeCompare(b.date));
+    const totL=sorted.reduce((s,p)=>s+p.litres,0), totR=sorted.reduce((s,p)=>s+p.total,0);
+    const pL=sorted.filter(p=>p.fuel==='Petrol').reduce((s,p)=>s+p.litres,0);
+    const dL=sorted.filter(p=>p.fuel==='Diesel').reduce((s,p)=>s+p.litres,0);
+
+    const cols=['Date','Customer','Vehicle','Fuel','Litres','Unit Price','Total ('+cur+')','Notes'];
+    const rows=sorted.map(p=>{ const c=cm[p.cid]||{name:'?',car:'?'}; return [p.date,c.name,c.car,p.fuel,p.litres.toFixed(2),cur+' '+p.ppl,cur+' '+p.total.toFixed(2),p.notes||'—']; });
+    const summary=[
+      {label:'Period',value:`${MF[mo]} ${yr}`},
+      {label:'Transactions',value:sorted.length},
+      {label:'Total Litres',value:totL.toFixed(2)+' L'},
+      {label:'Petrol',value:pL.toFixed(2)+' L'},
+      {label:'Diesel',value:dL.toFixed(2)+' L'},
+      {label:'Total Revenue',value:cur+' '+totR.toFixed(2)},
+    ];
+    this._reportPDF(`${MF[mo]} ${yr} Monthly Report`,'Monthly Sales Report',cols,rows,summary,`Monthly_${MF[mo]}_${yr}`);
+    this._audit('create',`Exported monthly PDF: ${MF[mo]} ${yr}`);
+  }
+
+  expHist(){
+    const ps=DB.get('_purchases',[]); const cm=this._cmap();
+    const prefs=DB.get('_prefs',{currency:'GHS'}); const cur=prefs.currency||'GHS';
+    const sorted=ps.slice().sort((a,b)=>b.date.localeCompare(a.date));
+    const totL=sorted.reduce((s,p)=>s+p.litres,0), totR=sorted.reduce((s,p)=>s+p.total,0);
+    const pL=sorted.filter(p=>p.fuel==='Petrol').reduce((s,p)=>s+p.litres,0);
+    const dL=sorted.filter(p=>p.fuel==='Diesel').reduce((s,p)=>s+p.litres,0);
+
+    const dataRows=[['Date','Customer','Vehicle','Phone','Fuel','Litres','Unit Price ('+cur+')','Total ('+cur+')','Notes']];
+    sorted.forEach(p=>{ const c=cm[p.cid]||{name:'?',car:'?',phone:''}; dataRows.push([p.date,c.name,c.car,c.phone||'',p.fuel,p.litres,+p.ppl,+p.total.toFixed(2),p.notes||'']); });
+    dataRows.push(['','','','','TOTAL',totL,'',+totR.toFixed(2),'']);
+
+    const summaryRows=[
+      ['Metric','Value'],
+      ['Total Transactions',sorted.length],
+      ['Total Litres Sold',totL.toFixed(2)],
+      ['Petrol Litres',pL.toFixed(2)],
+      ['Diesel Litres',dL.toFixed(2)],
+      ['Total Revenue ('+cur+')',totR.toFixed(2)],
+    ];
+    this._xlsxDownload(dataRows, summaryRows, 'All Transactions', 'Purchase_History_All');
+    this._audit('create','Exported full history Excel');
+  }
+
+  expHistPDF(){
+    const ps=DB.get('_purchases',[]); const cm=this._cmap();
+    const prefs=DB.get('_prefs',{currency:'GHS'}); const cur=prefs.currency||'GHS';
+    const sorted=ps.slice().sort((a,b)=>b.date.localeCompare(a.date));
+    const totL=sorted.reduce((s,p)=>s+p.litres,0), totR=sorted.reduce((s,p)=>s+p.total,0);
+    const pL=sorted.filter(p=>p.fuel==='Petrol').reduce((s,p)=>s+p.litres,0);
+    const dL=sorted.filter(p=>p.fuel==='Diesel').reduce((s,p)=>s+p.litres,0);
+
+    const cols=['Date','Customer','Vehicle','Phone','Fuel','Litres','Unit Price','Total ('+cur+')','Notes'];
+    const rows=sorted.map(p=>{ const c=cm[p.cid]||{name:'?',car:'?',phone:''}; return [p.date,c.name,c.car,c.phone||'—',p.fuel,p.litres.toFixed(2),cur+' '+p.ppl,cur+' '+p.total.toFixed(2),p.notes||'—']; });
+    const summary=[
+      {label:'Total Records',value:sorted.length},
+      {label:'Total Litres',value:totL.toFixed(2)+' L'},
+      {label:'Petrol',value:pL.toFixed(2)+' L',sub:'Fuel type split'},
+      {label:'Diesel',value:dL.toFixed(2)+' L',sub:'Fuel type split'},
+      {label:'Total Revenue',value:cur+' '+totR.toFixed(2)},
+    ];
+    this._reportPDF('Complete Purchase History','All Transactions Report',cols,rows,summary,'Purchase_History_All');
+    this._audit('create','Exported full history PDF');
+  }
 
   /* ── YEARLY ── */
   renderYearly(){
@@ -4135,7 +4384,22 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
     </tr>`; }).join('');
   }
 
-  expYearly(){ const yr=+document.getElementById('y-year').value; const ps=DB.get('_purchases',[]).filter(p=>new Date(p.date+'T00:00:00').getFullYear()===yr); const cm=this._cmap(); const rows=[['Date','Customer','Vehicle','Fuel','Litres','% of Stock','Price/L','Total']]; ps.sort((a,b)=>a.date.localeCompare(b.date)).forEach(p=>{ const c=cm[p.cid]||{name:'?',car:'?'}; rows.push([p.date,c.name,c.car,p.fuel,p.litres,INV.pct(p.litres,p.fuel),p.ppl,p.total.toFixed(2)]); }); this._csv(rows,`yearly_${yr}`); this._audit('create',`Exported yearly: ${yr}`); }
+  expYearly(){
+    const yr=+document.getElementById('y-year').value;
+    const ps=DB.get('_purchases',[]).filter(p=>new Date(p.date+'T00:00:00').getFullYear()===yr);
+    const cm=this._cmap();
+    const prefs=DB.get('_prefs',{currency:'GHS'}); const cur=prefs.currency||'GHS';
+    const sorted=ps.slice().sort((a,b)=>a.date.localeCompare(b.date));
+    const totL=sorted.reduce((s,p)=>s+p.litres,0), totR=sorted.reduce((s,p)=>s+p.total,0);
+    const pL=sorted.filter(p=>p.fuel==='Petrol').reduce((s,p)=>s+p.litres,0);
+    const dL=sorted.filter(p=>p.fuel==='Diesel').reduce((s,p)=>s+p.litres,0);
+    const dataRows=[['Date','Customer','Vehicle','Fuel','Litres','Unit Price ('+cur+')','Total ('+cur+')','Notes']];
+    sorted.forEach(p=>{ const c=cm[p.cid]||{name:'?',car:'?'}; dataRows.push([p.date,c.name,c.car,p.fuel,p.litres,+p.ppl,+p.total.toFixed(2),p.notes||'']); });
+    dataRows.push(['','','','TOTAL',totL,'',+totR.toFixed(2),'']);
+    const summaryRows=[['Metric','Value'],['Year',yr],['Total Transactions',sorted.length],['Total Litres',totL.toFixed(2)],['Petrol Litres',pL.toFixed(2)],['Diesel Litres',dL.toFixed(2)],['Total Revenue ('+cur+')',totR.toFixed(2)]];
+    this._xlsxDownload(dataRows, summaryRows, `Year ${yr}`, `Yearly_Report_${yr}`);
+    this._audit('create',`Exported yearly Excel: ${yr}`);
+  }
 
   /* ── HISTORY ── */
   renderHist(){
@@ -4169,8 +4433,6 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
     </tr>`; }).join('');
     this._pager('h-pager',this.hPage,pages,p=>{ this.hPage=p; this.renderHist(); });
   }
-
-  expHist(){ const ps=DB.get('_purchases',[]), cm=this._cmap(); const rows=[['Date','Customer','Vehicle','Phone','Fuel','Litres','% of Stock','Price/L','Total','Notes']]; ps.slice().sort((a,b)=>b.date.localeCompare(a.date)).forEach(p=>{ const c=cm[p.cid]||{name:'?',car:'?',phone:''}; rows.push([p.date,c.name,c.car,c.phone||'',p.fuel,p.litres,INV.pct(p.litres,p.fuel),p.ppl,p.total.toFixed(2),p.notes||'']); }); this._csv(rows,'history'); this._audit('create','Exported purchase history'); }
 
   /* ── AUDIT ── */
   renderAudit(){
