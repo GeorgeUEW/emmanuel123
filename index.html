@@ -617,8 +617,118 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   .topbar-brand { display: none !important; }
   .topbar-divider { display: none !important; }
 }
+/* ══ NOTIFICATION BELL ══ */
+.notif-wrap {
+  position: relative;
+}
+.notif-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--t3);
+  transition: all .15s;
+  cursor: pointer;
+  background: none;
+  border: none;
+  position: relative;
+}
+.notif-btn:hover { background: var(--surface-3); color: var(--t1); }
+.notif-btn svg { width: 16px; height: 16px; }
+.notif-badge {
+  position: absolute;
+  top: 3px; right: 3px;
+  min-width: 16px; height: 16px;
+  background: var(--danger);
+  color: #fff;
+  border-radius: 99px;
+  font-size: .6rem;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 4px;
+  border: 2px solid var(--surface);
+  pointer-events: none;
+  transition: transform .2s var(--ease);
+}
+.notif-badge.hidden { display: none; }
+.notif-badge.pop { animation: notif-pop .3s var(--ease); }
+@keyframes notif-pop {
+  0%   { transform: scale(0); }
+  70%  { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+.notif-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 340px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0,0,0,.12), 0 2px 8px rgba(0,0,0,.06);
+  z-index: 500;
+  overflow: hidden;
+  display: none;
+  animation: fadeUp .18s var(--ease);
+}
+.notif-panel.open { display: block; }
+.notif-panel-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .85rem 1rem .7rem;
+  border-bottom: 1px solid var(--border);
+}
+.notif-panel-title {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--t1);
+}
+.notif-clear-btn {
+  font-size: .72rem;
+  color: var(--t4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: .15rem .35rem;
+  border-radius: var(--radius-xs);
+  transition: all .12s;
+}
+.notif-clear-btn:hover { color: var(--danger); background: var(--danger-bg); }
+.notif-list {
+  max-height: 340px;
+  overflow-y: auto;
+}
+.notif-item {
+  display: flex;
+  gap: .7rem;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  transition: background .1s;
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item:hover { background: var(--surface-2); }
+.notif-item.unread { background: var(--warn-bg); }
+.notif-item.unread:hover { background: var(--warn-bdr); }
+.notif-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--warn);
+  flex-shrink: 0;
+  margin-top: .35rem;
+}
+.notif-dot.danger { background: var(--danger); }
+.notif-dot.read { background: var(--t5); }
+.notif-item-title { font-size: .78rem; font-weight: 600; color: var(--t1); margin-bottom: .15rem; }
+.notif-item-body { font-size: .72rem; color: var(--t3); line-height: 1.4; }
+.notif-item-time { font-size: .65rem; color: var(--t4); margin-top: .2rem; }
+.notif-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--t4);
+  font-size: .78rem;
+}
+.notif-empty svg { width: 28px; height: 28px; margin: 0 auto .5rem; display: block; opacity: .3; }
 .topbar-right { display: flex; align-items: center; gap: .4rem; }
-.icon-btn {
   width: 32px; height: 32px;
   border-radius: var(--radius-sm);
   display: flex; align-items: center; justify-content: center;
@@ -2257,6 +2367,25 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     <div class="topbar-divider"></div>
     <span class="topbar-title" id="topbar-title">Dashboard</span>
     <div class="topbar-right">
+      <!-- Notification Bell -->
+      <div class="notif-wrap" id="notif-wrap">
+        <button class="notif-btn" id="notif-btn" aria-label="Notifications" title="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-badge hidden" id="notif-badge">0</span>
+        </button>
+        <div class="notif-panel" id="notif-panel">
+          <div class="notif-panel-hd">
+            <span class="notif-panel-title">Notifications</span>
+            <button class="notif-clear-btn" id="notif-clear-btn">Clear all</button>
+          </div>
+          <div class="notif-list" id="notif-list">
+            <div class="notif-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              No notifications
+            </div>
+          </div>
+        </div>
+      </div>
       <button class="icon-btn" id="theme-btn" aria-label="Toggle theme">
         <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
         <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -2865,6 +2994,23 @@ textarea.form-input { resize: vertical; min-height: 70px; }
               <button class="btn btn-primary" id="save-prefs-btn">Save Preferences</button>
             </div>
           </div>
+          <div class="card admin-only" style="max-width:700px;margin-top:1rem">
+            <div class="card-hd"><span class="card-title">Low Stock Alert Thresholds</span><span class="card-subtitle" style="font-size:.72rem;color:var(--t4);margin-left:.5rem">Admin only</span></div>
+            <div class="card-body">
+              <p style="font-size:.78rem;color:var(--t3);margin-bottom:1rem;line-height:1.6">Set the minimum litres remaining that triggers a low-stock notification. Leave at 0 to disable.</p>
+              <div class="fg" style="margin-bottom:1rem">
+                <div>
+                  <label class="form-label">Petrol Alert Threshold (L)</label>
+                  <input class="form-input" type="number" min="0" step="1" id="s-petrol-threshold" placeholder="e.g. 500"/>
+                </div>
+                <div>
+                  <label class="form-label">Diesel Alert Threshold (L)</label>
+                  <input class="form-input" type="number" min="0" step="1" id="s-diesel-threshold" placeholder="e.g. 300"/>
+                </div>
+              </div>
+              <button class="btn btn-primary" id="save-thresholds-btn">Save Thresholds</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -3316,7 +3462,7 @@ const DB = {
 // ── Load ALL keys from Firestore into cache before booting the app ──
 async function loadAllFromFirestore(){
   const keys = ['_users','_purchases','_customers','_deliveries','_inv',
-                 '_audit','_prefs','_avatars','_sms','_theme'];
+                 '_audit','_prefs','_avatars','_sms','_theme','_notifications','_thresholds'];
   await Promise.all(keys.map(async k => {
     try {
       const snap = await getDoc(docRef(k));
@@ -3353,6 +3499,8 @@ function attachListeners(appInstance){
               settings:   ()=>appInstance.renderSettings(),
             };
             renders[p]?.();
+            // Re-check low stock whenever purchases or inventory changes
+            if(k==='_purchases'||k==='_inv') appInstance._checkLowStock();
           }
         }
       } catch(e){ console.warn('listener parse error', k, e); }
@@ -3544,6 +3692,8 @@ class App {
     if(!this._bound){ this._bind(); this._fillSelects(); this._initRange(); }
     this.nav('dashboard');
     attachListeners(this);
+    this._checkLowStock();
+    this._renderNotifPanel();
   }
 
   _audit(type,action,detail=''){
@@ -3585,6 +3735,10 @@ class App {
     if(sbLogout) sbLogout.addEventListener('click',()=>{ this._audit('login',`"${this.user?.display}" signed out`); signOut(fb_auth); });
     document.getElementById('theme-btn').addEventListener('click',()=>{ const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'; document.documentElement.setAttribute('data-theme',t); DB.set('_theme',t); this._redraw(); });
     document.getElementById('logout-btn').addEventListener('click',()=>{ this._audit('login',`"${this.user?.display}" signed out`); signOut(fb_auth); });
+    // Notification bell
+    document.getElementById('notif-btn').addEventListener('click',(e)=>{ e.stopPropagation(); this._toggleNotifPanel(); });
+    document.getElementById('notif-clear-btn').addEventListener('click',()=>{ DB.set('_notifications',[]); this._renderNotifPanel(); });
+    document.addEventListener('click',(e)=>{ if(!e.target.closest('#notif-wrap')) document.getElementById('notif-panel').classList.remove('open'); });
 
     // Dashboard range
     document.getElementById('d-from').addEventListener('change',e=>{ this.dFrom=e.target.value; this.renderDash(); });
@@ -4684,6 +4838,100 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
     if(bkAudit) bkAudit.textContent=DB.get('_audit',[]).length+' entries';
     const bkBtn=document.getElementById('export-backup-btn');
     if(bkBtn){ bkBtn.onclick=null; bkBtn.addEventListener('click',()=>this.exportFullBackup()); }
+    // Thresholds
+    const thresh=DB.get('_thresholds',{petrol:0,diesel:0});
+    const ptEl=document.getElementById('s-petrol-threshold');
+    const dtEl=document.getElementById('s-diesel-threshold');
+    if(ptEl) ptEl.value=thresh.petrol||'';
+    if(dtEl) dtEl.value=thresh.diesel||'';
+    const thrBtn=document.getElementById('save-thresholds-btn');
+    if(thrBtn){ thrBtn.onclick=null; thrBtn.addEventListener('click',()=>this._saveThresholds()); }
+    // Render notifications on load
+    this._renderNotifPanel();
+  }
+
+  _saveThresholds(){
+    const p=+document.getElementById('s-petrol-threshold').value||0;
+    const d=+document.getElementById('s-diesel-threshold').value||0;
+    DB.set('_thresholds',{petrol:p,diesel:d});
+    this._audit('settings',`Low-stock thresholds updated`,`Petrol: ${p}L, Diesel: ${d}L`);
+    this.toast('Thresholds saved');
+    this._checkLowStock();
+  }
+
+  _checkLowStock(){
+    const thresh=DB.get('_thresholds',{petrol:0,diesel:0});
+    const inv=DB.get('_inv',{petrolTotal:0,dieselTotal:0});
+    const purchases=DB.get('_purchases',[]);
+    const pSold=purchases.filter(p=>p.fuel==='Petrol').reduce((s,p)=>s+p.litres,0);
+    const dSold=purchases.filter(p=>p.fuel==='Diesel').reduce((s,p)=>s+p.litres,0);
+    const pRem=Math.max(0,(inv.petrolTotal||0)-pSold);
+    const dRem=Math.max(0,(inv.dieselTotal||0)-dSold);
+    if(thresh.petrol>0 && pRem<=thresh.petrol){
+      this._pushNotif('low-petrol',`⚠️ Petrol Stock Low`,`Only ${Math.round(pRem).toLocaleString()} L remaining — threshold is ${thresh.petrol.toLocaleString()} L. Restock soon.`,'warn');
+    }
+    if(thresh.diesel>0 && dRem<=thresh.diesel){
+      this._pushNotif('low-diesel',`⚠️ Diesel Stock Low`,`Only ${Math.round(dRem).toLocaleString()} L remaining — threshold is ${thresh.diesel.toLocaleString()} L. Restock soon.`,'danger');
+    }
+  }
+
+  _pushNotif(id, title, body, level='warn'){
+    const notifs=DB.get('_notifications',[]);
+    // Avoid duplicate unread alerts for same issue
+    const existing=notifs.find(n=>n.id===id&&!n.read);
+    if(existing) return;
+    notifs.unshift({id,title,body,level,read:false,ts:F.ts()});
+    if(notifs.length>50) notifs.splice(50);
+    DB.set('_notifications',notifs);
+    this._renderNotifPanel();
+  }
+
+  _renderNotifPanel(){
+    const notifs=DB.get('_notifications',[]);
+    const unread=notifs.filter(n=>!n.read).length;
+    const badge=document.getElementById('notif-badge');
+    const list=document.getElementById('notif-list');
+    if(!badge||!list) return;
+    // Badge
+    if(unread>0){
+      badge.textContent=unread>9?'9+':unread;
+      badge.classList.remove('hidden');
+      badge.classList.add('pop');
+      setTimeout(()=>badge.classList.remove('pop'),400);
+    } else {
+      badge.classList.add('hidden');
+    }
+    // List
+    if(!notifs.length){
+      list.innerHTML=`<div class="notif-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>No notifications</div>`;
+      return;
+    }
+    list.innerHTML=notifs.map(n=>`
+      <div class="notif-item ${n.read?'':'unread'}" data-nid="${n.id}" onclick="A._markNotifRead('${n.id}')">
+        <div class="notif-dot ${n.read?'read':n.level==='danger'?'danger':''}"></div>
+        <div style="flex:1;min-width:0">
+          <div class="notif-item-title">${n.title}</div>
+          <div class="notif-item-body">${n.body}</div>
+          <div class="notif-item-time">${n.ts}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  _markNotifRead(id){
+    const notifs=DB.get('_notifications',[]).map(n=>n.id===id?{...n,read:true}:n);
+    DB.set('_notifications',notifs);
+    this._renderNotifPanel();
+  }
+
+  _toggleNotifPanel(){
+    const panel=document.getElementById('notif-panel');
+    const isOpen=panel.classList.toggle('open');
+    if(isOpen){
+      // Mark all as read when opened
+      const notifs=DB.get('_notifications',[]).map(n=>({...n,read:true}));
+      DB.set('_notifications',notifs);
+      setTimeout(()=>this._renderNotifPanel(),300);
+    }
   }
 
   exportFullBackup(){
