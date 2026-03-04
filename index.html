@@ -4094,37 +4094,92 @@ class App {
     this.renderUsersTable();
   }
 
+  openAddUser(){
+    document.getElementById('eu-title').textContent='Add New Staff';
+    document.getElementById('eu-orig').value='__new__';
+    document.getElementById('eu-display').value='';
+    document.getElementById('eu-username').value='';
+    document.getElementById('eu-pwd').value='';
+    document.getElementById('eu-role').value='staff';
+    document.getElementById('eu-role-staff').classList.add('selected');
+    document.getElementById('eu-role-admin').classList.remove('selected');
+    document.getElementById('eu-err').classList.remove('show');
+    // Show email + password fields for new user
+    document.getElementById('eu-username').closest('.form-field').querySelector('label').textContent='Email Address';
+    document.getElementById('eu-username').placeholder='staff@example.com';
+    document.getElementById('eu-username').type='email';
+    document.getElementById('eu-pwd').closest('.form-field').querySelector('label').textContent='Temporary Password';
+    document.getElementById('save-eu-btn').textContent='Create Account';
+    document.getElementById('m-eu').style.display='flex';
+  }
+
   openEditUser(uid){
     const users=DB.get('_users',[]); const u=users.find(x=>x.uid===uid); if(!u) return;
     document.getElementById('eu-title').textContent='Edit User';
     document.getElementById('eu-orig').value=uid;
     document.getElementById('eu-display').value=u.display||'';
     document.getElementById('eu-username').value=u.email||'';
+    document.getElementById('eu-username').type='text';
+    document.getElementById('eu-username').closest('.form-field').querySelector('label').textContent='Email';
     document.getElementById('eu-pwd').value='';
+    document.getElementById('eu-pwd').closest('.form-field').querySelector('label').textContent='New Password (leave blank to keep current)';
     document.getElementById('eu-role').value=u.role||'staff';
     document.getElementById('eu-role-staff').classList.toggle('selected',u.role!=='admin');
     document.getElementById('eu-role-admin').classList.toggle('selected',u.role==='admin');
     document.getElementById('eu-err').classList.remove('show');
+    document.getElementById('save-eu-btn').textContent='Save Changes';
     document.getElementById('m-eu').style.display='flex';
   }
 
-  saveEditUser(){
-    const uid=document.getElementById('eu-orig').value;
+  async saveEditUser(){
+    const orig=document.getElementById('eu-orig').value;
     const display=document.getElementById('eu-display').value.trim();
+    const emailOrUsername=document.getElementById('eu-username').value.trim().toLowerCase();
     const role=document.getElementById('eu-role').value;
+    const pwd=document.getElementById('eu-pwd').value;
     const err=document.getElementById('eu-err');
-    let users=DB.get('_users',[]);
+    const btn=document.getElementById('save-eu-btn');
     if(!display){ err.textContent='Display name is required.'; err.classList.add('show'); return; }
-    users=users.map(u=>u.uid===uid?{...u,display,role}:u);
-    DB.set('_users',users);
-    if(uid===this.user?.uid){
-      this.user={...this.user,display,role};
-      this._refreshTopbar();
+
+    if(orig==='__new__'){
+      // Creating new user via Firebase Auth
+      if(!emailOrUsername){ err.textContent='Email address is required.'; err.classList.add('show'); return; }
+      if(!pwd||pwd.length<6){ err.textContent='Password must be at least 6 characters.'; err.classList.add('show'); return; }
+      btn.textContent='Creating…'; btn.disabled=true;
+      try {
+        // Create Firebase Auth account
+        const { createUserWithEmailAndPassword: _c, getAuth: _g } = await Promise.resolve({ createUserWithEmailAndPassword, getAuth: ()=>fb_auth });
+        const cred = await createUserWithEmailAndPassword(fb_auth, emailOrUsername, pwd);
+        const ADMIN_EMAIL='eb810111@gmail.com';
+        const assignedRole = emailOrUsername===ADMIN_EMAIL ? 'admin' : role;
+        const newU = { uid:cred.user.uid, email:emailOrUsername, display, role:assignedRole, createdAt:new Date().toLocaleDateString('en-GB') };
+        const users=DB.get('_users',[]); users.push(newU); DB.set('_users',users);
+        this._audit('create',`Admin created account: ${display} (${emailOrUsername})`,`Role: ${assignedRole}`);
+        this.toast(`Account created for ${display}`);
+        btn.textContent='Create Account'; btn.disabled=false;
+        err.classList.remove('show');
+        this.closeModal('m-eu'); this.renderUsersTable();
+      } catch(e){
+        btn.textContent='Create Account'; btn.disabled=false;
+        const msgs={
+          'auth/email-already-in-use':'An account with this email already exists.',
+          'auth/invalid-email':'Please enter a valid email address.',
+          'auth/weak-password':'Password must be at least 6 characters.',
+        };
+        err.textContent=msgs[e.code]||'Failed to create account. Try again.';
+        err.classList.add('show');
+      }
+    } else {
+      // Editing existing user — only update display name and role in Firestore
+      let users=DB.get('_users',[]);
+      users=users.map(u=>u.uid===orig?{...u,display,role}:u);
+      DB.set('_users',users);
+      if(orig===this.user?.uid){ this.user={...this.user,display,role}; this._refreshTopbar(); }
+      this._audit('edit',`Edited user: ${display}`,`Role: ${role}`);
+      this.toast(`${display} updated`);
+      err.classList.remove('show');
+      this.closeModal('m-eu'); this.renderUsersTable();
     }
-    this._audit('edit',`Edited user: ${display}`,`Role: ${role}`);
-    this.toast(`User updated`);
-    err.classList.remove('show');
-    this.closeModal('m-eu'); this.renderUsersTable();
   }
 
   deleteUser(uid){
