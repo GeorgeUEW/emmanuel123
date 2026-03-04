@@ -2292,6 +2292,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     </svg>
   </div>
   <div style="font-size:.8rem;font-weight:600;color:var(--t3);letter-spacing:.04em;text-transform:uppercase">Loading…</div>
+  <div id="loading-error" style="display:none;font-size:.75rem;color:#EF4444;padding:0 2rem;text-align:center;max-width:320px;line-height:1.5"></div>
 </div>
 <style>
 @keyframes pulse {
@@ -3611,6 +3612,41 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 <!-- Toast -->
 <div class="toast" id="toast"><div class="toast-dot"></div><span id="toast-msg">Saved</span></div>
 
+<!-- GUARANTEED LOADING FALLBACK: hides overlay even if Firebase/module crashes -->
+<script>
+(function(){
+  // Hard timeout: no matter what, hide loading overlay after 10s
+  var _forceHide = setTimeout(function(){
+    var el = document.getElementById('loading-overlay');
+    if(el) el.style.display = 'none';
+    var app = document.getElementById('app');
+    var login = document.getElementById('login-screen');
+    if(app && app.style.display === 'none' && login){
+      login.style.display = '';
+    }
+  }, 10000);
+  window.__clearForceHide = function(){ clearTimeout(_forceHide); };
+
+  // Catch any uncaught JS errors (including module import failures)
+  window.addEventListener('error', function(e){
+    console.error('App error:', e.message);
+    var errEl = document.getElementById('loading-error');
+    if(errEl){ errEl.textContent = 'Error: ' + e.message + '. Check your internet connection and refresh.'; errEl.style.display='block'; }
+    setTimeout(function(){
+      var el = document.getElementById('loading-overlay');
+      if(el && el.style.display !== 'none'){
+        el.style.display = 'none';
+        var login = document.getElementById('login-screen');
+        if(login) login.style.display = '';
+      }
+    }, 3000);
+  });
+  // Catch unhandled promise rejections (Firebase async failures)
+  window.addEventListener('unhandledrejection', function(e){
+    console.error('Unhandled rejection:', e.reason);
+  });
+})();
+</script>
 <script type="module">
 'use strict';
 
@@ -6258,7 +6294,7 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
 
   /* ── UTILS ── */
   _showLoadingOverlay(){ const el=document.getElementById('loading-overlay'); if(el) el.style.display='flex'; }
-  _hideLoadingOverlay(){ const el=document.getElementById('loading-overlay'); if(el) el.style.display='none'; }
+  _hideLoadingOverlay(){ const el=document.getElementById('loading-overlay'); if(el) el.style.display='none'; if(window.__clearForceHide) window.__clearForceHide(); }
 
   _cmap(){ return Object.fromEntries(DB.get('_customers',[]).map(c=>[c.id,c])); }
   closeModal(id){ document.getElementById(id).style.display='none'; }
