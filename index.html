@@ -4255,7 +4255,7 @@ class App {
       <td class="fw-700">${F.n2(d.litres)} L</td>
       <td>${F.esc(d.supplier||'—')}</td>
       <td class="text-muted" style="font-size:.75rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${F.esc(d.notes||'—')}</td>
-      <td><button class="btn btn-danger btn-xs" data-ac="di" data-id="${d.id}">Remove</button></td>
+      <td><button class="btn btn-danger btn-xs admin-only" data-ac="di" data-id="${d.id}">Remove</button></td>
     </tr>`).join('');
   }
 
