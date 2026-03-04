@@ -3218,9 +3218,45 @@ textarea.form-input { resize: vertical; min-height: 70px; }
                   <div style="font-size:1.1rem;font-weight:700;color:var(--t1)" id="bk-audit-count">—</div>
                 </div>
               </div>
+              <!-- Last backup info -->
+              <div id="bk-last-wrap" style="display:none;background:var(--success-bg);border:1px solid #bbf7d0;border-radius:var(--radius-sm);padding:.65rem .9rem;margin-bottom:1rem;font-size:.78rem;color:var(--t2)">
+                <span style="font-weight:600;color:var(--success)">✓ Last backup:</span> <span id="bk-last-time">—</span>
+              </div>
               <button class="btn btn-primary" id="export-backup-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Download Full Backup (.xlsx)
+              </button>
+            </div>
+          </div>
+
+          <!-- Auto-Backup Schedule -->
+          <div class="card" style="max-width:620px;margin-top:1rem">
+            <div class="card-hd">
+              <div><div class="card-title">Automatic Backup Schedule</div><div class="card-subtitle">App auto-downloads a backup on your chosen schedule when open</div></div>
+              <span id="bk-schedule-badge" style="font-size:.68rem;font-weight:600;padding:.2rem .55rem;border-radius:99px;background:var(--surface-3);color:var(--t4);border:1px solid var(--border)">Off</span>
+            </div>
+            <div class="card-body">
+              <div class="fg" style="margin-bottom:1rem">
+                <div>
+                  <label class="form-label">Frequency</label>
+                  <select class="form-input" id="bk-freq">
+                    <option value="off">Disabled</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly (1st of month)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="form-label">Time of day</label>
+                  <input class="form-input" type="time" id="bk-time" value="08:00"/>
+                </div>
+              </div>
+              <div id="bk-next-wrap" style="display:none;background:var(--info-bg);border:1px solid var(--info-bdr);border-radius:var(--radius-sm);padding:.65rem .9rem;margin-bottom:1rem;font-size:.78rem;color:var(--t2)">
+                <span style="font-weight:600;color:var(--info)">⏰ Next backup:</span> <span id="bk-next-time">—</span>
+              </div>
+              <button class="btn btn-primary" id="save-schedule-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v14a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Save Schedule
               </button>
             </div>
           </div>
@@ -3499,7 +3535,8 @@ const DB = {
 // ── Load ALL keys from Firestore into cache before booting the app ──
 async function loadAllFromFirestore(){
   const keys = ['_users','_purchases','_customers','_deliveries','_inv',
-                 '_audit','_prefs','_avatars','_sms','_theme','_notifications','_thresholds'];
+                 '_audit','_prefs','_avatars','_sms','_theme','_notifications','_thresholds',
+                 '_backup_schedule','_last_backup_ts'];
   await Promise.all(keys.map(async k => {
     try {
       const snap = await getDoc(docRef(k));
@@ -3731,6 +3768,7 @@ class App {
     attachListeners(this);
     this._checkLowStock();
     this._renderNotifPanel();
+    this._checkAutoBackup();
   }
 
   _audit(type,action,detail=''){
@@ -4976,6 +5014,18 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
     if(bkAudit) bkAudit.textContent=DB.get('_audit',[]).length+' entries';
     const bkBtn=document.getElementById('export-backup-btn');
     if(bkBtn){ bkBtn.onclick=null; bkBtn.addEventListener('click',()=>this.exportFullBackup()); }
+    // Schedule UI
+    const sched=DB.get('_backup_schedule',{freq:'off',time:'08:00'});
+    const freqEl=document.getElementById('bk-freq'); if(freqEl) freqEl.value=sched.freq||'off';
+    const timeEl=document.getElementById('bk-time'); if(timeEl) timeEl.value=sched.time||'08:00';
+    this._updateScheduleBadge();
+    const saveSchedBtn=document.getElementById('save-schedule-btn');
+    if(saveSchedBtn){ saveSchedBtn.onclick=null; saveSchedBtn.addEventListener('click',()=>this._saveBackupSchedule()); }
+    // Last backup info
+    const lastTs=DB.get('_last_backup_ts','');
+    const lastWrap=document.getElementById('bk-last-wrap');
+    const lastEl=document.getElementById('bk-last-time');
+    if(lastWrap&&lastEl){ if(lastTs){ lastWrap.style.display=''; lastEl.textContent=lastTs; } else { lastWrap.style.display='none'; } }
     // Thresholds
     const thresh=DB.get('_thresholds',{petrol:0,diesel:0});
     const ptEl=document.getElementById('s-petrol-threshold');
@@ -5072,7 +5122,74 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
     }
   }
 
-  exportFullBackup(){
+  _saveBackupSchedule(){
+    const freq=document.getElementById('bk-freq').value;
+    const time=document.getElementById('bk-time').value||'08:00';
+    DB.set('_backup_schedule',{freq,time});
+    this._audit('settings',`Auto-backup schedule updated`,`Frequency: ${freq}, Time: ${time}`);
+    this._updateScheduleBadge();
+    this.toast(freq==='off'?'Auto-backup disabled':'Schedule saved — backup will run automatically');
+  }
+
+  _updateScheduleBadge(){
+    const sched=DB.get('_backup_schedule',{freq:'off',time:'08:00'});
+    const badge=document.getElementById('bk-schedule-badge');
+    const nextWrap=document.getElementById('bk-next-wrap');
+    const nextEl=document.getElementById('bk-next-time');
+    if(!badge) return;
+    if(sched.freq==='off'){
+      badge.textContent='Off';
+      badge.style.background='var(--surface-3)'; badge.style.color='var(--t4)'; badge.style.borderColor='var(--border)';
+      if(nextWrap) nextWrap.style.display='none';
+    } else {
+      badge.textContent=sched.freq.charAt(0).toUpperCase()+sched.freq.slice(1);
+      badge.style.background='var(--success-bg)'; badge.style.color='var(--success)'; badge.style.borderColor='#bbf7d0';
+      if(nextWrap&&nextEl){ nextWrap.style.display=''; nextEl.textContent=this._nextBackupLabel(sched); }
+    }
+  }
+
+  _nextBackupLabel(sched){
+    const now=new Date();
+    const [hh,mm]=(sched.time||'08:00').split(':').map(Number);
+    let next=new Date(now);
+    next.setHours(hh,mm,0,0);
+    if(sched.freq==='daily'){
+      if(next<=now) next.setDate(next.getDate()+1);
+    } else if(sched.freq==='weekly'){
+      next.setDate(next.getDate()+((7-next.getDay())%7||7));
+      next.setHours(hh,mm,0,0);
+      if(next<=now) next.setDate(next.getDate()+7);
+    } else if(sched.freq==='monthly'){
+      next=new Date(now.getFullYear(),now.getMonth()+1,1,hh,mm,0,0);
+    }
+    return next.toLocaleString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  }
+
+  _checkAutoBackup(){
+    const sched=DB.get('_backup_schedule',{freq:'off',time:'08:00'});
+    if(!sched||sched.freq==='off') return;
+    const lastTs=DB.get('_last_backup_ts','');
+    const now=new Date();
+    const [hh,mm]=(sched.time||'08:00').split(':').map(Number);
+    const todayKey=now.toISOString().slice(0,10);
+    const lastDate=lastTs?lastTs.slice(0,10):'';
+    let due=false;
+    if(sched.freq==='daily'){
+      // Due if today not yet backed up AND current time is past scheduled time
+      due=(lastDate!==todayKey)&&(now.getHours()>hh||(now.getHours()===hh&&now.getMinutes()>=mm));
+    } else if(sched.freq==='weekly'){
+      // Due on Mondays past scheduled time
+      due=(now.getDay()===1)&&(lastDate!==todayKey)&&(now.getHours()>hh||(now.getHours()===hh&&now.getMinutes()>=mm));
+    } else if(sched.freq==='monthly'){
+      // Due on 1st of month past scheduled time
+      due=(now.getDate()===1)&&(lastDate!==todayKey)&&(now.getHours()>hh||(now.getHours()===hh&&now.getMinutes()>=mm));
+    }
+    if(due){
+      this.exportFullBackup(true); // silent=true
+    }
+  }
+
+  exportFullBackup(silent=false){
     const prefs=DB.get('_prefs',{currency:'GHS'});
     const cur=prefs.currency||'GHS';
     const customers=DB.get('_customers',[]);
@@ -5123,8 +5240,12 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
     XLSX.utils.book_append_sheet(WB,_sheet(aRows),'Audit Log');
     const ts=new Date().toISOString().slice(0,10);
     XLSX.writeFile(WB,`Emmanuel_Fuel_Backup_${ts}.xlsx`);
+    const tsLabel=new Date().toLocaleString('en-GB');
+    DB.set('_last_backup_ts', tsLabel);
     this._audit('create',`Full database backup exported`);
-    this.toast('Backup downloaded successfully');
+    this._pushNotif('backup-'+ts, '✅ Backup Complete', `Database backup downloaded successfully on ${tsLabel}.`, 'warn');
+    if(!silent) this.toast('Backup downloaded successfully');
+    else this.toast('Auto-backup downloaded successfully');
   }
 
   saveProfile(){
