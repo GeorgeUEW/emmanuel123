@@ -4395,7 +4395,6 @@ class App {
     if(!id && this.user?.role !== 'admin'){ this.toast('Only the Admin can add customers','error'); return; }
     const c=id?(DB.get('_customers',[]).find(x=>x.id===id)||null):null;
     document.getElementById('mc-title').textContent=c?'Edit Customer':'Add Customer';
-    ['cf-id','cf-name','cf-car','cf-phone','cf-email','cf-addr'].forEach(fid=>{ const el=document.getElementById(fid); el.value=c?.(fid.replace('cf-','').replace('id','id')||fid.slice(3))||c?.[fid.slice(3)]||''; });
     document.getElementById('cf-id').value=c?.id||'';
     document.getElementById('cf-name').value=c?.name||'';
     document.getElementById('cf-car').value=c?.car||'';
