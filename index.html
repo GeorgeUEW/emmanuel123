@@ -1336,7 +1336,8 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 .month-hl { background: var(--brand-lt) !important; }
 [data-theme="dark"] .month-hl { background: rgba(249,115,22,.07) !important; }
 
-/* ══ RESPONSIVE ══ */
+/* Mobile-only sidebar elements — hidden on desktop */
+.sb-close, .sb-user-card, .sb-logout-btn { display: none; }
 @media (max-width: 900px) {
   :root { --sidebar-w: 0px; }
   .shell { grid-template-columns: 0 1fr; }
@@ -1536,6 +1537,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }
   .fg { grid-template-columns: 1fr 1fr; }
   .donut-wrap { flex-direction: column; gap: .75rem; }
+  .sb-close, .sb-user-card, .sb-logout-btn { display: flex; }
 }
 
 @media (max-width: 768px) {
