@@ -3872,7 +3872,7 @@ class App {
     document.getElementById('receipt-content').innerHTML=`
       <div class="receipt">
         <div class="receipt-logo">
-          <div class="receipt-logo-name">⛽ Emmanuel's Fuel Station</div>
+          <div class="receipt-logo-name">⛽ Emmanuel's Fuel Tracking System</div>
           <div class="receipt-logo-sub">Official Transaction Receipt</div>
         </div>
         <hr class="receipt-hr"/>
@@ -3991,7 +3991,7 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
         <div class="hd-logo">
           <div class="hd-logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2C12 2 5 9 5 14a7 7 0 0 0 14 0c0-5-7-12-7-12z"/></svg></div>
           <div>
-            <div class="hd-name">Emmanuel's Fuel Station</div>
+            <div class="hd-name">Emmanuel's Fuel Tracking System</div>
             <div class="hd-sub">Official Transaction Receipt</div>
           </div>
         </div>
@@ -4226,7 +4226,7 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
     <div class="hd-inner">
       <div class="hd-logo">
         <div class="hd-icon"><svg viewBox="0 0 24 24"><path d="M12 2C12 2 5 9 5 14a7 7 0 0 0 14 0c0-5-7-12-7-12z"/></svg></div>
-        <div><div class="hd-name">Emmanuel's Fuel Station</div><div class="hd-sub">${subtitle}</div></div>
+        <div><div class="hd-name">Emmanuel's Fuel Tracking System</div><div class="hd-sub">${subtitle}</div></div>
       </div>
       <div class="hd-meta">
         <div class="hd-title">${title}</div>
@@ -4814,7 +4814,7 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
     }
     result.textContent='Sending test SMS via Hubtel…'; result.className='sms-result ok show';
     const tmp=s.enabled; s.enabled=true; DB.set('_sms',s);
-    const sent=await this._sendSMS("✅ Test from Emmanuel's Fuel Station. Hubtel SMS is working!",s.phone);
+    const sent=await this._sendSMS("✅ Test from Emmanuel's Fuel Tracking System. Hubtel SMS is working!",s.phone);
     s.enabled=tmp; DB.set('_sms',s);
     result.textContent=sent?'✅ Test SMS sent successfully!':'❌ Failed. Check your Hubtel credentials and wallet balance.';
     result.className=sent?'sms-result ok show':'sms-result fail show';
@@ -4877,7 +4877,7 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
     const tmpEnabled=s.enabled; s.enabled=true;
     DB.set('_sms',s);
     const sent=await this._sendSMS(
-      `✅ Test from Emmanuel's Fuel Station. Your Hubtel SMS is working perfectly!`,
+      `✅ Test from Emmanuel's Fuel Tracking System. Your Hubtel SMS is working perfectly!`,
       s.phone
     );
     s.enabled=tmpEnabled; DB.set('_sms',s);
@@ -4927,7 +4927,7 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
 
   _notifySMS(type, detail){
     const s=DB.get('_sms',{}); if(!s.enabled) return;
-    const station="Emmanuel's Fuel Station";
+    const station="Emmanuel's Fuel Tracking System";
     const msgs={
       sale: (d)=>`⛽ ${station}\nNew Sale Recorded\n${d}`,
       low:  (d)=>`⚠️ ${station}\nLOW STOCK ALERT!\n${d}`,
