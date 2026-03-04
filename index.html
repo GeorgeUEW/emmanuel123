@@ -2753,6 +2753,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
           <button class="stab" data-stab="prefs">Preferences</button>
           <button class="stab" data-stab="users" id="stab-users-btn">Users</button>
           <button class="stab" data-stab="sms">SMS Notifications</button>
+          <button class="stab admin-only" data-stab="data">Data &amp; Backup</button>
         </div>
         <div class="spane active" id="sp-profile">
           <div class="card" style="max-width:620px">
@@ -3005,6 +3006,39 @@ textarea.form-input { resize: vertical; min-height: 70px; }
                 <thead><tr><th>User</th><th>Username</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead>
                 <tbody id="users-tbody"></tbody>
               </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="spane" id="sp-data">
+          <div class="card" style="max-width:620px">
+            <div class="card-hd">
+              <div><div class="card-title">Full Database Backup</div><div class="card-subtitle">Export all data as a multi-sheet Excel file</div></div>
+            </div>
+            <div class="card-body">
+              <p style="font-size:.82rem;color:var(--t3);margin-bottom:1.25rem;line-height:1.6;">This will export <strong>all</strong> data — customers, purchases, inventory deliveries, audit log and preferences — into a single Excel workbook with one sheet per category.</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.25rem">
+                <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.85rem 1rem">
+                  <div style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t4);margin-bottom:.3rem">Customers</div>
+                  <div style="font-size:1.1rem;font-weight:700;color:var(--t1)" id="bk-cust-count">—</div>
+                </div>
+                <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.85rem 1rem">
+                  <div style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t4);margin-bottom:.3rem">Purchases</div>
+                  <div style="font-size:1.1rem;font-weight:700;color:var(--t1)" id="bk-purch-count">—</div>
+                </div>
+                <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.85rem 1rem">
+                  <div style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t4);margin-bottom:.3rem">Deliveries</div>
+                  <div style="font-size:1.1rem;font-weight:700;color:var(--t1)" id="bk-del-count">—</div>
+                </div>
+                <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.85rem 1rem">
+                  <div style="font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t4);margin-bottom:.3rem">Audit Entries</div>
+                  <div style="font-size:1.1rem;font-weight:700;color:var(--t1)" id="bk-audit-count">—</div>
+                </div>
+              </div>
+              <button class="btn btn-primary" id="export-backup-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download Full Backup (.xlsx)
+              </button>
             </div>
           </div>
         </div>
@@ -4639,6 +4673,72 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
     document.getElementById('s-dfmt').value=p.dateformat||'DD/MM/YYYY';
     ['s-old','s-new','s-cnf'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('s-perr').classList.remove('show');
+    // Backup counts
+    const bkCust=document.getElementById('bk-cust-count');
+    const bkPurch=document.getElementById('bk-purch-count');
+    const bkDel=document.getElementById('bk-del-count');
+    const bkAudit=document.getElementById('bk-audit-count');
+    if(bkCust) bkCust.textContent=DB.get('_customers',[]).length+' records';
+    if(bkPurch) bkPurch.textContent=DB.get('_purchases',[]).length+' records';
+    if(bkDel) bkDel.textContent=DB.get('_deliveries',[]).length+' records';
+    if(bkAudit) bkAudit.textContent=DB.get('_audit',[]).length+' entries';
+    const bkBtn=document.getElementById('export-backup-btn');
+    if(bkBtn){ bkBtn.onclick=null; bkBtn.addEventListener('click',()=>this.exportFullBackup()); }
+  }
+
+  exportFullBackup(){
+    const prefs=DB.get('_prefs',{currency:'GHS'});
+    const cur=prefs.currency||'GHS';
+    const customers=DB.get('_customers',[]);
+    const purchases=DB.get('_purchases',[]);
+    const deliveries=DB.get('_deliveries',[]);
+    const audit=DB.get('_audit',[]);
+    const inv=DB.get('_inv',{petrolTotal:0,dieselTotal:0});
+    const cmap={};customers.forEach(c=>cmap[c.id]=c);
+    const WB=XLSX.utils.book_new();
+    const hdr={font:{bold:true,color:{rgb:'FFFFFF'},name:'Arial',sz:10},fill:{fgColor:{rgb:'1A1A2E'}},alignment:{horizontal:'center',vertical:'center'},border:{bottom:{style:'medium',color:{rgb:'F97316'}}}};
+    const alt={fill:{fgColor:{rgb:'F9FAFB'}},font:{name:'Arial',sz:9},alignment:{horizontal:'left',vertical:'center'}};
+    const norm={fill:{fgColor:{rgb:'FFFFFF'}},font:{name:'Arial',sz:9},alignment:{horizontal:'left',vertical:'center'}};
+    const num={fill:{fgColor:{rgb:'FFFFFF'}},font:{name:'Arial',sz:9},alignment:{horizontal:'right',vertical:'center'},numFmt:'#,##0.00'};
+    const _sheet=(rows)=>{
+      const ws=XLSX.utils.aoa_to_sheet(rows);
+      const range=XLSX.utils.decode_range(ws['!ref']||'A1');
+      for(let R=range.s.r;R<=range.e.r;R++) for(let C=range.s.c;C<=range.e.c;C++){
+        const addr=XLSX.utils.encode_cell({r:R,c:C});
+        if(!ws[addr]) ws[addr]={t:'z',v:''};
+        ws[addr].s=R===0?hdr:(R%2===0?alt:norm);
+      }
+      ws['!cols']=rows[0]?.map((_,ci)=>({wch:Math.min(36,Math.max(10,...rows.map(r=>String(r[ci]||'').length)))}))
+      ws['!rows']=[{hpt:22}];
+      return ws;
+    };
+    // Sheet 1 — Purchases
+    const pRows=[['Date','Customer','Vehicle','Fuel','Litres','Price/L ('+cur+')','Total ('+cur+')','Notes']];
+    purchases.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(p=>{
+      const c=cmap[p.cid]||{name:'Unknown',car:'—'};
+      pRows.push([p.date,c.name,c.car,p.fuel,+p.litres,+p.ppl,+(+p.total).toFixed(2),p.notes||'']);
+    });
+    XLSX.utils.book_append_sheet(WB,_sheet(pRows),'Purchases');
+    // Sheet 2 — Customers
+    const cRows=[['Name','Vehicle','Phone','Email','Address','Fuel Preference','Created']];
+    customers.forEach(c=>cRows.push([c.name,c.car,c.phone||'',c.email||'',c.address||'',c.fuel||'',c.createdAt||'']));
+    XLSX.utils.book_append_sheet(WB,_sheet(cRows),'Customers');
+    // Sheet 3 — Deliveries
+    const dRows=[['Date','Fuel Type','Litres Added','Notes']];
+    deliveries.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(d=>dRows.push([d.date,d.fuel,+d.litres,d.notes||'']));
+    XLSX.utils.book_append_sheet(WB,_sheet(dRows),'Deliveries');
+    // Sheet 4 — Inventory Summary
+    const iRows=[['Metric','Petrol','Diesel'],['Total Added (L)',inv.petrolTotal||0,inv.dieselTotal||0],['Total Sold (L)',purchases.filter(p=>p.fuel==='Petrol').reduce((s,p)=>s+p.litres,0),purchases.filter(p=>p.fuel==='Diesel').reduce((s,p)=>s+p.litres,0)]];
+    iRows.push(['Remaining (L)',+(iRows[1][1]-iRows[2][1]).toFixed(2),+(iRows[1][2]-iRows[2][2]).toFixed(2)]);
+    XLSX.utils.book_append_sheet(WB,_sheet(iRows),'Inventory');
+    // Sheet 5 — Audit Log
+    const aRows=[['Timestamp','User','Type','Action','Detail']];
+    audit.forEach(l=>aRows.push([l.ts||'',l.user||'',l.type||'',l.action||'',l.detail||'']));
+    XLSX.utils.book_append_sheet(WB,_sheet(aRows),'Audit Log');
+    const ts=new Date().toISOString().slice(0,10);
+    XLSX.writeFile(WB,`Emmanuel_Fuel_Backup_${ts}.xlsx`);
+    this._audit('create',`Full database backup exported`);
+    this.toast('Backup downloaded successfully');
   }
 
   saveProfile(){
