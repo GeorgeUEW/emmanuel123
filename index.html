@@ -1853,6 +1853,31 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 </head>
 <body>
 
+<!-- ══ LOADING OVERLAY ══ -->
+<div id="loading-overlay" style="
+  position:fixed;inset:0;background:var(--surface);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:9999;gap:1rem;
+">
+  <div style="
+    width:44px;height:44px;background:var(--brand);border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 0 8px rgba(249,115,22,.15);
+    animation:pulse 1.4s ease-in-out infinite;
+  ">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2C12 2 5 9 5 14a7 7 0 0 0 14 0c0-5-7-12-7-12z"/>
+    </svg>
+  </div>
+  <div style="font-size:.8rem;font-weight:600;color:var(--t3);letter-spacing:.04em;text-transform:uppercase">Loading…</div>
+</div>
+<style>
+@keyframes pulse {
+  0%,100%{box-shadow:0 0 0 8px rgba(249,115,22,.15);}
+  50%{box-shadow:0 0 0 16px rgba(249,115,22,.04);}
+}
+</style>
+
 <!-- ══════════════════ LOGIN ══════════════════ -->
 <div id="login-screen" class="login-wrap">
   <div class="login-panel">
@@ -2956,18 +2981,103 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 <!-- Toast -->
 <div class="toast" id="toast"><div class="toast-dot"></div><span id="toast-msg">Saved</span></div>
 
-<script>
+<script type="module">
 'use strict';
+
+// ═══════════════════════════════════════════
+//  FIREBASE SETUP
+// ═══════════════════════════════════════════
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDmh1RYZmY3ACZTSkRW0YScSLDylqFwtvg",
+  authDomain: "emmanuel-s-tracking.firebaseapp.com",
+  projectId: "emmanuel-s-tracking",
+  storageBucket: "emmanuel-s-tracking.firebasestorage.app",
+  messagingSenderId: "679834142883",
+  appId: "1:679834142883:web:e06e2a1709cb15d075d716",
+  measurementId: "G-WNSY3QEWT6"
+};
+
+const fbApp  = initializeApp(firebaseConfig);
+const db_fs  = getFirestore(fbApp);
+
+// ── Firestore document reference for a key ──
+const docRef = (k) => doc(db_fs, 'fuelapp', k);
+
+// ── In-memory cache (keeps UI snappy) ──
+const _cache = {};
+
+// ═══════════════════════════════════════════
+//  DB — drop-in replacement for localStorage
+//  All reads are instant (from cache).
+//  All writes go to Firestore + cache.
+//  Real-time listeners keep cache fresh.
+// ═══════════════════════════════════════════
+const DB = {
+  get(k, d=null){
+    return (_cache[k] !== undefined) ? _cache[k] : d;
+  },
+  set(k, v){
+    _cache[k] = v;
+    // Fire-and-forget write to Firestore
+    setDoc(docRef(k), { value: JSON.stringify(v) }).catch(e => console.warn('DB.set error', k, e));
+  },
+};
+
+// ── Load ALL keys from Firestore into cache before booting the app ──
+async function loadAllFromFirestore(){
+  const keys = ['_users','_purchases','_customers','_deliveries','_inv',
+                 '_audit','_prefs','_avatars','_sms','_theme'];
+  await Promise.all(keys.map(async k => {
+    try {
+      const snap = await getDoc(docRef(k));
+      if(snap.exists()){
+        _cache[k] = JSON.parse(snap.data().value);
+      }
+    } catch(e){ console.warn('load error', k, e); }
+  }));
+}
+
+// ── Real-time listeners — any change from another device updates cache & re-renders ──
+function attachListeners(appInstance){
+  const keys = ['_purchases','_customers','_deliveries','_inv','_audit','_users','_prefs','_sms'];
+  keys.forEach(k => {
+    onSnapshot(docRef(k), snap => {
+      if(!snap.exists()) return;
+      try {
+        const newVal = JSON.parse(snap.data().value);
+        // Only re-render if value actually changed
+        if(JSON.stringify(_cache[k]) !== JSON.stringify(newVal)){
+          _cache[k] = newVal;
+          // Re-render current page to reflect remote changes
+          if(appInstance && appInstance.page){
+            const p = appInstance.page;
+            const renders = {
+              dashboard: ()=>appInstance.renderDash(),
+              inventory:  ()=>appInstance.renderInv(),
+              customers:  ()=>appInstance.renderCusts(),
+              record:     ()=>appInstance.renderRecord(),
+              monthly:    ()=>appInstance.renderMonthly(),
+              yearly:     ()=>appInstance.renderYearly(),
+              history:    ()=>appInstance.renderHist(),
+              audit:      ()=>appInstance.renderAudit(),
+              settings:   ()=>appInstance.renderSettings(),
+            };
+            renders[p]?.();
+          }
+        }
+      } catch(e){ console.warn('listener parse error', k, e); }
+    });
+  });
+}
 
 const MF = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const CUR_SYM = { GHS:'GHS\u00a0', USD:'$', EUR:'€', GBP:'£', NGN:'₦', KES:'KSh\u00a0', ZAR:'R\u00a0' };
 const AV_COLS  = ['#F97316','#3B82F6','#10B981','#8B5CF6','#EC4899','#F59E0B','#06B6D4','#EF4444'];
-
-const DB = {
-  get(k,d=null){ try{ const v=localStorage.getItem(k); return v!=null?JSON.parse(v):d; }catch{ return d; } },
-  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch{} },
-};
 
 const F = {
   money(n){ const s=(DB.get('_prefs',{currency:'GHS'}).currency)||'GHS'; return (CUR_SYM[s]||s+'\u00a0')+(+n).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2}); },
@@ -2995,7 +3105,15 @@ const INV = {
 class App {
   constructor(){ this.user=null; this.page='dashboard'; this.cPage=1; this.hPage=1; this.aPage=1; this.PS=15; this._delCb=null; this._rcpt=null; this.dFrom=null; this.dTo=null; }
 
-  init(){
+  async init(){
+    // Show loading overlay while fetching from Firestore
+    this._showLoadingOverlay();
+    try {
+      await loadAllFromFirestore();
+    } catch(e){
+      console.warn('Firestore load failed, continuing with empty state', e);
+    }
+    this._hideLoadingOverlay();
     const s=sessionStorage.getItem('_sess');
     if(s){ this.user=JSON.parse(s); this._boot(); } else this._showLogin();
   }
@@ -3094,6 +3212,8 @@ class App {
     this._refreshTopbar();
     document.documentElement.setAttribute('data-theme',DB.get('_theme','light'));
     this._bind(); this._fillSelects(); this._initRange(); this.nav('dashboard');
+    // Attach real-time Firestore listeners for cross-device sync
+    attachListeners(this);
   }
 
   _audit(type,action,detail=''){
@@ -4256,6 +4376,9 @@ class App {
   }
 
   /* ── UTILS ── */
+  _showLoadingOverlay(){ const el=document.getElementById('loading-overlay'); if(el) el.style.display='flex'; }
+  _hideLoadingOverlay(){ const el=document.getElementById('loading-overlay'); if(el) el.style.display='none'; }
+
   _cmap(){ return Object.fromEntries(DB.get('_customers',[]).map(c=>[c.id,c])); }
   closeModal(id){ document.getElementById(id).style.display='none'; }
   _confirm(msg,cb){ document.getElementById('del-msg').textContent=msg; this._delCb=cb; document.getElementById('m-del').style.display='flex'; }
