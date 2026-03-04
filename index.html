@@ -3790,33 +3790,24 @@ class App {
 
   async init(){
     this._showLoadingOverlay();
-    // Track if auth has already resolved to avoid double-boot
-    let authResolved = false;
-    // Safety timeout — if Firebase takes too long, show login
+    let _initDone = false;
     const safetyTimer = setTimeout(()=>{
-      if(!authResolved){
-        authResolved = true;
-        this._hideLoadingOverlay();
-        if(!this.user) this._showLogin();
-      }
+      if(!_initDone){ _initDone=true; this._hideLoadingOverlay(); if(!this.user) this._showLogin(); }
     }, 8000);
-    // Let Firebase Auth decide, then load Firestore data before booting
     onAuthStateChanged(fb_auth, async (fbUser) => {
-      if(authResolved) return; // prevent double-fire on re-auth events
-      authResolved = true;
       clearTimeout(safetyTimer);
       const ADMIN_EMAIL = 'eb810111@gmail.com';
       if(fbUser){
+        // Already booted with this user — do nothing (avoids re-boot on minor token refresh)
+        if(this.user && this.user.uid === fbUser.uid) return;
         // Wait for Firestore data BEFORE booting so dashboard has real data
         try { await loadAllFromFirestore(); } catch(e){ console.warn('Firestore load failed', e); }
         let profile = DB.get('_users',[]).find(u=>u.uid===fbUser.uid);
         if(!profile){
-          // First time — create profile, admin email always gets admin role
           const role = fbUser.email.toLowerCase()===ADMIN_EMAIL ? 'admin' : 'staff';
           profile = { uid:fbUser.uid, email:fbUser.email, display:fbUser.email.split('@')[0], role, createdAt:new Date().toLocaleDateString('en-GB') };
           const users = DB.get('_users',[]); users.push(profile); DB.set('_users', users);
         } else if(fbUser.email.toLowerCase()===ADMIN_EMAIL && profile.role!=='admin'){
-          // Ensure admin email is always admin even if someone changed it
           profile.role = 'admin';
           const users = DB.get('_users',[]).map(u=>u.uid===profile.uid?{...u,role:'admin'}:u);
           DB.set('_users', users);
@@ -3825,6 +3816,9 @@ class App {
         this._hideLoadingOverlay();
         this._boot();
       } else {
+        // Signed out — reset state and show login immediately
+        this.user = null;
+        this._bound = false;
         this._hideLoadingOverlay();
         this._showLogin();
       }
@@ -3882,8 +3876,18 @@ class App {
       errEl.classList.remove('show');
       btn.textContent='Signing in…'; btn.disabled=true;
       try {
-        await signInWithEmailAndPassword(fb_auth, email, pwd);
-        // onAuthStateChanged will handle the rest
+        const cred = await signInWithEmailAndPassword(fb_auth, email, pwd);
+        // Directly boot — don't wait for onAuthStateChanged
+        const ADMIN_EMAIL = 'eb810111@gmail.com';
+        try { await loadAllFromFirestore(); } catch(e){ console.warn('Firestore load failed', e); }
+        let profile = DB.get('_users',[]).find(u=>u.uid===cred.user.uid);
+        if(!profile){
+          const role = email===ADMIN_EMAIL ? 'admin' : 'staff';
+          profile = { uid:cred.user.uid, email, display:email.split('@')[0], role, createdAt:new Date().toLocaleDateString('en-GB') };
+          const users = DB.get('_users',[]); users.push(profile); DB.set('_users', users);
+        }
+        this.user = profile;
+        this._boot();
       } catch(err){
         btn.textContent='Sign In'; btn.disabled=false;
         const msgs={
@@ -3997,9 +4001,9 @@ class App {
     if(sbClose) sbClose.addEventListener('click',()=>document.getElementById('app').classList.remove('nav-open'));
     // Sidebar logout btn
     const sbLogout=document.getElementById('sb-logout-btn');
-    if(sbLogout) sbLogout.addEventListener('click',()=>{ this._audit('login',`"${this.user?.display}" signed out`); signOut(fb_auth); });
+    if(sbLogout) sbLogout.addEventListener('click',()=>{ this._audit('login',`"${this.user?.display}" signed out`); this.user=null; this._bound=false; this._showLogin(); signOut(fb_auth); });
     document.getElementById('theme-btn').addEventListener('click',()=>{ const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'; document.documentElement.setAttribute('data-theme',t); DB.set('_theme',t); this._redraw(); });
-    document.getElementById('logout-btn').addEventListener('click',()=>{ this._audit('login',`"${this.user?.display}" signed out`); signOut(fb_auth); });
+    document.getElementById('logout-btn').addEventListener('click',()=>{ this._audit('login',`"${this.user?.display}" signed out`); this.user=null; this._bound=false; this._showLogin(); signOut(fb_auth); });
     // Notification bell
     document.getElementById('notif-btn').addEventListener('click',(e)=>{ e.stopPropagation(); this._toggleNotifPanel(); });
     document.getElementById('notif-clear-btn').addEventListener('click',()=>{ DB.set('_notifications',[]); this._renderNotifPanel(); });
