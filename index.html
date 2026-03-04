@@ -4010,22 +4010,70 @@ class App {
 
   _bind(){
     if(this._bound) return; this._bound=true;
-    // Nav
-    document.querySelectorAll('.nav-item[data-page]').forEach(el=>el.addEventListener('click',()=>{ this.nav(el.dataset.page); document.getElementById('app').classList.remove('nav-open'); }));
-    document.getElementById('menu-btn').addEventListener('click',()=>document.getElementById('app').classList.toggle('nav-open'));
-    document.getElementById('app').addEventListener('click',e=>{ if(!e.target.closest('.sidebar')&&!e.target.closest('#menu-btn')) document.getElementById('app').classList.remove('nav-open'); });
-    // Mobile drawer close btn
-    const sbClose=document.getElementById('sb-close-btn');
-    if(sbClose) sbClose.addEventListener('click',()=>document.getElementById('app').classList.remove('nav-open'));
-    // Sidebar logout btn
-    const sbLogout=document.getElementById('sb-logout-btn');
-    if(sbLogout) sbLogout.addEventListener('click',()=>{ this._audit('login',`"${this.user?.display}" signed out`); this.user=null; this._bound=false; this._showLogin(); signOut(fb_auth); });
-    document.getElementById('theme-btn').addEventListener('click',()=>{ const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'; document.documentElement.setAttribute('data-theme',t); DB.set('_theme',t); this._redraw(); });
-    document.getElementById('logout-btn').addEventListener('click',()=>{ this._audit('login',`"${this.user?.display}" signed out`); this.user=null; this._bound=false; this._showLogin(); signOut(fb_auth); });
+
+    // Wipe old listeners on key elements by cloning them
+    const _rebind = (id) => {
+      const el = document.getElementById(id);
+      if(!el) return null;
+      const clone = el.cloneNode(true);
+      el.parentNode.replaceChild(clone, el);
+      return clone;
+    };
+
+    // Re-bind nav items fresh (removes stale listeners from previous login)
+    document.querySelectorAll('.nav-item[data-page]').forEach(el => {
+      const clone = el.cloneNode(true);
+      el.parentNode.replaceChild(clone, el);
+      clone.addEventListener('click', () => {
+        this.nav(clone.dataset.page);
+        document.getElementById('app').classList.remove('nav-open');
+      });
+    });
+
+    // Hamburger menu button — mobile
+    const menuBtn = _rebind('menu-btn');
+    if(menuBtn) menuBtn.addEventListener('click', () => document.getElementById('app').classList.toggle('nav-open'));
+
+    // Close nav on outside tap — named handler, never duplicated
+    if(this._appClickHandler) document.getElementById('app')?.removeEventListener('click', this._appClickHandler);
+    this._appClickHandler = (e) => {
+      if(!e.target.closest('.sidebar') && !e.target.closest('#menu-btn'))
+        document.getElementById('app').classList.remove('nav-open');
+    };
+    document.getElementById('app')?.addEventListener('click', this._appClickHandler);
+
+    // Sidebar X close button
+    const sbClose = _rebind('sb-close-btn');
+    if(sbClose) sbClose.addEventListener('click', () => document.getElementById('app').classList.remove('nav-open'));
+
+    // Logout — show login immediately, sign out Firebase in background
+    const _doLogout = () => {
+      this._audit('login', `"${this.user?.display}" signed out`);
+      this.user = null; this._bound = false;
+      this._showLogin(); signOut(fb_auth);
+    };
+    const sbLogout  = _rebind('sb-logout-btn');
+    const logoutBtn = _rebind('logout-btn');
+    if(sbLogout)  sbLogout.addEventListener('click',  _doLogout);
+    if(logoutBtn) logoutBtn.addEventListener('click', _doLogout);
+
+    // Theme toggle
+    const themeBtn = _rebind('theme-btn');
+    if(themeBtn) themeBtn.addEventListener('click', () => {
+      const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', t); DB.set('_theme', t); this._redraw();
+    });
+
     // Notification bell
-    document.getElementById('notif-btn').addEventListener('click',(e)=>{ e.stopPropagation(); this._toggleNotifPanel(); });
-    document.getElementById('notif-clear-btn').addEventListener('click',()=>{ DB.set('_notifications',[]); this._renderNotifPanel(); });
-    document.addEventListener('click',(e)=>{ if(!e.target.closest('#notif-wrap')) document.getElementById('notif-panel').classList.remove('open'); });
+    const notifBtn   = _rebind('notif-btn');
+    const notifClear = _rebind('notif-clear-btn');
+    if(notifBtn)   notifBtn.addEventListener('click',   (e) => { e.stopPropagation(); this._toggleNotifPanel(); });
+    if(notifClear) notifClear.addEventListener('click', () => { DB.set('_notifications', []); this._renderNotifPanel(); });
+
+    // Close notif panel on outside click — named handler, never duplicated
+    if(this._docClickHandler) document.removeEventListener('click', this._docClickHandler);
+    this._docClickHandler = (e) => { if(!e.target.closest('#notif-wrap')) document.getElementById('notif-panel').classList.remove('open'); };
+    document.addEventListener('click', this._docClickHandler);
 
     // Dashboard range
     document.getElementById('d-from').addEventListener('change',e=>{ this.dFrom=e.target.value; this.renderDash(); });
