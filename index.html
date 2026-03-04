@@ -4049,7 +4049,7 @@ class App {
     // Logout — show login immediately, sign out Firebase in background
     const _doLogout = () => {
       this._audit('login', `"${this.user?.display}" signed out`);
-      this.user = null; this._bound = false;
+      this.user = null; this._bound = false; this._tblHandlers = {};
       this._showLogin(); signOut(fb_auth);
     };
     const sbLogout  = _rebind('sb-logout-btn');
@@ -4171,12 +4171,12 @@ class App {
     });
 
     // Delegated events
+    if(!this._tblHandlers) this._tblHandlers = {};
     const _tbl = (id, fn) => {
       const el = document.getElementById(id); if(!el) return;
-      const handler = e => fn(e);
-      el.removeEventListener('click', el._handler);
-      el._handler = handler;
-      el.addEventListener('click', handler);
+      if(this._tblHandlers[id]) el.removeEventListener('click', this._tblHandlers[id]);
+      this._tblHandlers[id] = e => fn(e);
+      el.addEventListener('click', this._tblHandlers[id]);
     };
     _tbl('rec-recent', e=>this._recAc(e));
     _tbl('h-tbody',    e=>this._recAc(e));
