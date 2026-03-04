@@ -4171,11 +4171,18 @@ class App {
     });
 
     // Delegated events
-    document.getElementById('rec-recent').addEventListener('click',e=>this._recAc(e));
-    document.getElementById('h-tbody').addEventListener('click',e=>this._recAc(e));
-    document.getElementById('m-tbody').addEventListener('click',e=>this._recAc(e));
-    document.getElementById('c-tbody').addEventListener('click',e=>this._custAc(e));
-    document.getElementById('inv-tbody').addEventListener('click',e=>this._invAc(e));
+    const _tbl = (id, fn) => {
+      const el = document.getElementById(id); if(!el) return;
+      const handler = e => fn(e);
+      el.removeEventListener('click', el._handler);
+      el._handler = handler;
+      el.addEventListener('click', handler);
+    };
+    _tbl('rec-recent', e=>this._recAc(e));
+    _tbl('h-tbody',    e=>this._recAc(e));
+    _tbl('m-tbody',    e=>this._recAc(e));
+    _tbl('c-tbody',    e=>this._custAc(e));
+    _tbl('inv-tbody',  e=>this._invAc(e));
   }
 
   _recAc(e){ const b=e.target.closest('[data-ac]'); if(!b) return; const {ac,id}=b.dataset; if(ac==='ep') this.openEP(id); if(ac==='dp') this._confirm('Delete this purchase?',()=>this.delPurchase(id)); if(ac==='rcp') this.showReceipt(id); }
