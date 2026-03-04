@@ -4179,7 +4179,7 @@ class App {
   }
 
   _recAc(e){ const b=e.target.closest('[data-ac]'); if(!b) return; const {ac,id}=b.dataset; if(ac==='ep') this.openEP(id); if(ac==='dp') this._confirm('Delete this purchase?',()=>this.delPurchase(id)); if(ac==='rcp') this.showReceipt(id); }
-  _custAc(e){ const b=e.target.closest('[data-ac]'); if(!b) return; const {ac,id}=b.dataset; if(ac==='ec') this.openCust(id); if(ac==='dc') this._confirm('Delete this customer and all their data?',()=>this.delCust(id)); if(ac==='vc') this.viewProfile(id); if(ac==='pay') this.openPayment(id); }
+  _custAc(e){ const b=e.target.closest('button[data-ac]'); if(!b) return; const {ac,id}=b.dataset; if(ac==='ec') this.openCust(id); if(ac==='dc') this._confirm('Delete this customer and all their data?',()=>this.delCust(id)); if(ac==='vc') this.viewProfile(id); if(ac==='pay') this.openPayment(id); }
   _invAc(e){ const b=e.target.closest('[data-ac]'); if(!b) return; if(b.dataset.ac==='di') this._confirm('Delete this delivery entry?',()=>this.delInv(b.dataset.id)); }
 
   nav(page){
