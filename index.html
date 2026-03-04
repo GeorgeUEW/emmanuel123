@@ -1478,6 +1478,56 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 .pstat-val.orange { color: var(--brand); }
 .pstat-val.petrol { color: var(--petrol); }
 .pstat-val.diesel { color: var(--diesel); }
+.pstat-val.debt   { color: var(--danger); }
+.pstat-val.credit { color: var(--success); }
+
+/* ══ DEBT / CREDIT ══ */
+.balance-banner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .7rem 1rem; border-radius: var(--radius-sm);
+  margin-bottom: .85rem; gap: .75rem; flex-wrap: wrap;
+}
+.balance-banner.debt   { background: var(--danger-bg);  border: 1px solid var(--danger-bdr); }
+.balance-banner.credit { background: var(--diesel-bg);  border: 1px solid var(--diesel-bdr); }
+.balance-banner.zero   { background: var(--surface-2);  border: 1px solid var(--border); }
+.balance-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.balance-banner.debt   .balance-label { color: var(--danger); }
+.balance-banner.credit .balance-label { color: var(--success); }
+.balance-banner.zero   .balance-label { color: var(--t4); }
+.balance-amount { font-size: 1.15rem; font-weight: 800; letter-spacing: -.03em; }
+.balance-banner.debt   .balance-amount { color: var(--danger); }
+.balance-banner.credit .balance-amount { color: var(--success); }
+.balance-banner.zero   .balance-amount { color: var(--t3); }
+.balance-actions { display: flex; gap: .4rem; flex-wrap: wrap; }
+.ledger-row {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .5rem .75rem; border-radius: var(--radius-xs);
+  margin-bottom: .3rem; font-size: .78rem;
+  border: 1px solid var(--border); background: var(--surface);
+}
+.ledger-row.debit   { border-left: 3px solid var(--danger); }
+.ledger-row.credit  { border-left: 3px solid var(--success); }
+.ledger-row.payment { border-left: 3px solid var(--petrol); }
+.ledger-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.debit   .ledger-dot { background: var(--danger); }
+.credit  .ledger-dot { background: var(--success); }
+.payment .ledger-dot { background: var(--petrol); }
+.ledger-desc { flex: 1; color: var(--t2); font-weight: 500; }
+.ledger-amt { font-weight: 700; white-space: nowrap; }
+.debit   .ledger-amt { color: var(--danger); }
+.credit  .ledger-amt { color: var(--success); }
+.payment .ledger-amt { color: var(--petrol); }
+.ledger-ts { font-size: .65rem; color: var(--t4); white-space: nowrap; }
+.debtors-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 1rem 1.25rem;
+  margin-bottom: 1rem; display: flex; align-items: center;
+  gap: 1.25rem; flex-wrap: wrap;
+  box-shadow: var(--shadow-sm);
+}
+.debtors-stat { text-align: center; min-width: 90px; }
+.debtors-stat-val { font-size: 1.3rem; font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.debtors-stat-lbl { font-size: .62rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--t4); margin-top: .2rem; }
 
 /* ══ TOAST ══ */
 .toast {
@@ -2612,6 +2662,16 @@ textarea.form-input { resize: vertical; min-height: 70px; }
             </button>
           </div>
         </div>
+        <!-- Debtors Summary -->
+        <div id="debtors-summary" class="debtors-card" style="display:none">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--danger);margin-bottom:.35rem">⚠️ Outstanding Balances</div>
+            <div style="font-size:.78rem;color:var(--t3)">Some customers have unpaid balances. Click a customer to record payment.</div>
+          </div>
+          <div class="debtors-stat"><div class="debtors-stat-val" id="ds-count" style="color:var(--danger)">0</div><div class="debtors-stat-lbl">Debtors</div></div>
+          <div class="debtors-stat"><div class="debtors-stat-val" id="ds-total" style="color:var(--danger)">—</div><div class="debtors-stat-lbl">Total Owed</div></div>
+          <div class="debtors-stat"><div class="debtors-stat-val" id="ds-credit" style="color:var(--success)">—</div><div class="debtors-stat-lbl">Total Credit</div></div>
+        </div>
         <div class="filter-row">
           <div class="search-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -2622,12 +2682,17 @@ textarea.form-input { resize: vertical; min-height: 70px; }
             <option value="Petrol">Petrol Buyers</option>
             <option value="Diesel">Diesel Buyers</option>
           </select>
+          <select class="filter-select" id="c-balance-f">
+            <option value="">All Balances</option>
+            <option value="debt">Debtors Only</option>
+            <option value="credit">Credit Only</option>
+          </select>
           <button class="btn btn-ghost btn-sm" id="c-reset-btn">Reset</button>
         </div>
         <div class="card" style="margin-bottom:0">
           <div class="tbl-wrap">
             <table class="tbl">
-              <thead><tr><th>#</th><th>Customer</th><th>Vehicle</th><th>Phone</th><th>Petrol (L)</th><th>Diesel (L)</th><th>Total Fuel</th><th>% of Stock</th><th>Revenue</th><th>Last Visit</th><th></th></tr></thead>
+              <thead><tr><th>#</th><th>Customer</th><th>Vehicle</th><th>Phone</th><th>Petrol (L)</th><th>Diesel (L)</th><th>Total Fuel</th><th>% of Stock</th><th>Revenue</th><th>Balance</th><th>Last Visit</th><th></th></tr></thead>
               <tbody id="c-tbody"></tbody>
             </table>
           </div>
@@ -3288,6 +3353,43 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 
 <!-- ══════════════════ MODALS ══════════════════ -->
 
+<!-- Debt / Credit Payment Modal -->
+<div id="m-payment" class="modal-bg" style="display:none">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-hd">
+      <span class="modal-hd-title" id="mp-pay-title">Record Payment</span>
+      <div class="modal-close" onclick="A.closeModal('m-payment')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pay-cid"/>
+      <div id="pay-balance-info" style="margin-bottom:1rem"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+        <div>
+          <label class="form-label">Type</label>
+          <select class="form-input" id="pay-type">
+            <option value="payment">Payment Received</option>
+            <option value="credit">Add Credit</option>
+            <option value="debt">Add Debt</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Amount</label>
+          <input class="form-input" type="number" min="0" step="0.01" id="pay-amount" placeholder="0.00"/>
+        </div>
+      </div>
+      <div style="margin-bottom:.75rem">
+        <label class="form-label">Note (optional)</label>
+        <input class="form-input" type="text" id="pay-note" placeholder="e.g. Cash payment, Bank transfer…"/>
+      </div>
+      <div id="pay-err" class="err-msg">Please enter a valid amount.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="A.closeModal('m-payment')">Cancel</button>
+      <button class="btn btn-primary" id="save-payment-btn">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- Customer Form -->
 <div id="m-cust" class="modal-bg" style="display:none">
   <div class="modal">
@@ -3570,7 +3672,9 @@ async function loadAllFromFirestore(){
 // ── Real-time listeners — any change from another device updates cache & re-renders ──
 function attachListeners(appInstance){
   const keys = ['_purchases','_customers','_deliveries','_inv','_audit','_users','_prefs','_sms'];
-  keys.forEach(k => {
+  // Also listen to ledger keys for all existing customers
+  const custLedgerKeys = DB.get('_customers',[]).map(c=>'_ledger_'+c.id);
+  [...keys,...custLedgerKeys].forEach(k => {
     onSnapshot(docRef(k), snap => {
       if(!snap.exists()) return;
       try {
@@ -3845,7 +3949,9 @@ class App {
     document.getElementById('exp-cust-btn').addEventListener('click',()=>this.expCusts());
     document.getElementById('c-search').addEventListener('input',()=>{ this.cPage=1; this.renderCusts(); });
     document.getElementById('c-fuel-f').addEventListener('change',()=>{ this.cPage=1; this.renderCusts(); });
-    document.getElementById('c-reset-btn').addEventListener('click',()=>{ document.getElementById('c-search').value=''; document.getElementById('c-fuel-f').value=''; this.cPage=1; this.renderCusts(); });
+    document.getElementById('c-balance-f').addEventListener('change',()=>{ this.cPage=1; this.renderCusts(); });
+    document.getElementById('c-reset-btn').addEventListener('click',()=>{ document.getElementById('c-search').value=''; document.getElementById('c-fuel-f').value=''; document.getElementById('c-balance-f').value=''; this.cPage=1; this.renderCusts(); });
+    document.getElementById('save-payment-btn').addEventListener('click',()=>this._savePayment());
     document.getElementById('save-cust-btn').addEventListener('click',()=>this.saveCust());
 
     // Record
@@ -3937,7 +4043,7 @@ class App {
   }
 
   _recAc(e){ const b=e.target.closest('[data-ac]'); if(!b) return; const {ac,id}=b.dataset; if(ac==='ep') this.openEP(id); if(ac==='dp') this._confirm('Delete this purchase?',()=>this.delPurchase(id)); if(ac==='rcp') this.showReceipt(id); }
-  _custAc(e){ const b=e.target.closest('[data-ac]'); if(!b) return; const {ac,id}=b.dataset; if(ac==='ec') this.openCust(id); if(ac==='dc') this._confirm('Delete this customer and all their data?',()=>this.delCust(id)); if(ac==='vc') this.viewProfile(id); }
+  _custAc(e){ const b=e.target.closest('[data-ac]'); if(!b) return; const {ac,id}=b.dataset; if(ac==='ec') this.openCust(id); if(ac==='dc') this._confirm('Delete this customer and all their data?',()=>this.delCust(id)); if(ac==='vc') this.viewProfile(id); if(ac==='pay') this.openPayment(id); }
   _invAc(e){ const b=e.target.closest('[data-ac]'); if(!b) return; if(b.dataset.ac==='di') this._confirm('Delete this delivery entry?',()=>this.delInv(b.dataset.id)); }
 
   nav(page){
@@ -4092,13 +4198,24 @@ class App {
     let arr=custs.slice();
     const q=document.getElementById('c-search').value.trim().toLowerCase();
     const ff=document.getElementById('c-fuel-f').value;
+    const bf=document.getElementById('c-balance-f').value;
     if(q) arr=arr.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.car||'').toLowerCase().includes(q)||(c.phone||'').toLowerCase().includes(q));
     if(ff){ const cids=new Set(ps.filter(p=>p.fuel===ff).map(p=>p.cid)); arr=arr.filter(c=>cids.has(c.id)); }
+    // Balance filter
+    if(bf==='debt') arr=arr.filter(c=>this._custBalance(c.id)<0);
+    if(bf==='credit') arr=arr.filter(c=>this._custBalance(c.id)>0);
+    // Debtors summary
+    const allBalances=custs.map(c=>this._custBalance(c.id));
+    const totalDebt=allBalances.filter(b=>b<0).reduce((s,b)=>s+Math.abs(b),0);
+    const totalCredit=allBalances.filter(b=>b>0).reduce((s,b)=>s+b,0);
+    const debtorCount=allBalances.filter(b=>b<0).length;
+    const dsEl=document.getElementById('debtors-summary');
+    if(dsEl){ dsEl.style.display=debtorCount>0?'':'none'; document.getElementById('ds-count').textContent=debtorCount; document.getElementById('ds-total').textContent=F.money(totalDebt); document.getElementById('ds-credit').textContent=F.money(totalCredit); }
     const pages=Math.ceil(arr.length/this.PS)||1; this.cPage=Math.min(this.cPage,pages);
     const slice=arr.slice((this.cPage-1)*this.PS,this.cPage*this.PS);
     const inv=INV.totals();
     const tb=document.getElementById('c-tbody');
-    if(!slice.length){ tb.innerHTML=`<tr><td colspan="11" class="empty-row">No customers found.</td></tr>`; }
+    if(!slice.length){ tb.innerHTML=`<tr><td colspan="12" class="empty-row">No customers found.</td></tr>`; }
     else tb.innerHTML=slice.map((c,i)=>{
       const cps=ps.filter(p=>p.cid===c.id);
       const pet=cps.filter(p=>p.fuel==='Petrol').reduce((s,p)=>s+p.litres,0);
@@ -4108,6 +4225,8 @@ class App {
       const totFuel=pet+die;
       const pTot=(inv.petrolTotal||0)+(inv.dieselTotal||0);
       const stockPct=pTot?F.pct(totFuel,pTot):'N/A';
+      const bal=this._custBalance(c.id);
+      const balHtml=bal===0?`<span style="color:var(--t4);font-size:.75rem">Settled</span>`:bal>0?`<span style="color:var(--success);font-weight:700">+${F.money(bal)}</span>`:`<span style="color:var(--danger);font-weight:700">-${F.money(Math.abs(bal))}</span>`;
       return `<tr>
         <td class="text-muted">${(this.cPage-1)*this.PS+i+1}</td>
         <td><div class="row-gap"><div class="cust-av" style="background:${av(c.name)}">${F.init(c.name)}</div><div><div class="fw-600">${F.esc(c.name)}</div><div style="font-size:.68rem;color:var(--t4)">${F.esc(c.email||'')}</div></div></div></td>
@@ -4118,9 +4237,11 @@ class App {
         <td class="fw-700">${F.n2(totFuel)} L</td>
         <td><span class="badge badge-brand">${stockPct}</span></td>
         <td class="fw-700 text-brand">${F.money(rev)}</td>
+        <td>${balHtml}</td>
         <td>${last==='—'?'—':F.date(last)}</td>
         <td><div class="row-gap">
           <button class="btn btn-ghost btn-xs" data-ac="vc" data-id="${c.id}">View</button>
+          <button class="btn btn-info btn-xs admin-only" data-ac="pay" data-id="${c.id}">💳 Pay</button>
           <button class="btn btn-secondary btn-xs" data-ac="ec" data-id="${c.id}">Edit</button>
           <button class="btn btn-danger btn-xs" data-ac="dc" data-id="${c.id}">Del</button>
         </div></td>
@@ -4169,6 +4290,20 @@ class App {
     const last=ps.length?ps.slice().sort((a,b)=>b.date.localeCompare(a.date))[0].date:'—';
     const inv=INV.totals(), pTot=(inv.petrolTotal||0)+(inv.dieselTotal||0);
     const custStockPct=pTot?F.pct(tL,pTot):'N/A';
+    const bal=this._custBalance(cid);
+    const balBanner=bal===0
+      ?`<div class="balance-banner zero" style="margin-bottom:.85rem"><span class="balance-label">Balance</span><span class="balance-amount">Settled ✓</span></div>`
+      :bal>0
+      ?`<div class="balance-banner credit" style="margin-bottom:.85rem"><div><span class="balance-label">Credit Balance</span><div class="balance-amount">+${F.money(bal)}</div></div><div class="balance-actions"><button class="btn btn-secondary btn-sm" onclick="A.closeModal('m-profile');A.openPayment('${cid}')">Manage</button></div></div>`
+      :`<div class="balance-banner debt" style="margin-bottom:.85rem"><div><span class="balance-label">Outstanding Debt</span><div class="balance-amount">-${F.money(Math.abs(bal))}</div></div><div class="balance-actions"><button class="btn btn-primary btn-sm" onclick="A.closeModal('m-profile');A.openPayment('${cid}')">💳 Record Payment</button></div></div>`;
+    const ledger=this._custLedger(cid);
+    const ledgerHtml=ledger.length?ledger.slice(0,8).map(e=>`
+      <div class="ledger-row ${e.type}">
+        <div class="ledger-dot"></div>
+        <div class="ledger-desc">${F.esc(e.note)}</div>
+        <div class="ledger-amt">${e.amount>0?'+':''}${F.money(e.amount)}</div>
+        <div class="ledger-ts">${e.ts}</div>
+      </div>`).join(''):`<div style="font-size:.75rem;color:var(--t4);padding:.5rem 0">No transactions yet</div>`;
     document.getElementById('mp-title').textContent=c.name+' — Profile';
     document.getElementById('mp-body').innerHTML=`
       <div class="profile-hd">
@@ -4179,6 +4314,7 @@ class App {
           <div class="profile-meta">Vehicle: <strong>${F.esc(c.car)}</strong> · ${ps.length} visits${c.addr?' · '+F.esc(c.addr):''}</div>
         </div>
       </div>
+      ${balBanner}
       <div class="profile-stats">
         <div class="pstat"><div class="pstat-lbl">Total Spent</div><div class="pstat-val orange">${F.money(rev)}</div></div>
         <div class="pstat"><div class="pstat-lbl">Total Fuel</div><div class="pstat-val">${F.n2(tL)} L</div></div>
@@ -4189,8 +4325,10 @@ class App {
         <div class="pstat"><div class="pstat-lbl">% of Total Stock</div><div class="pstat-val orange">${custStockPct}</div></div>
         <div class="pstat"><div class="pstat-lbl">Last Visit</div><div class="pstat-val" style="font-size:.82rem">${last==='—'?'—':F.date(last)}</div></div>
       </div>
+      <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t4);margin-bottom:.5rem;margin-top:.85rem">Balance Ledger</div>
+      <div style="margin-bottom:.85rem">${ledgerHtml}</div>
       <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t4);margin-bottom:.6rem">Purchase History</div>
-      <div class="tbl-wrap" style="max-height:300px;overflow-y:auto">
+      <div class="tbl-wrap" style="max-height:260px;overflow-y:auto">
         <table class="tbl">
           <thead><tr><th>Date</th><th>Fuel</th><th>Litres</th><th>% of Stock</th><th>Price/L</th><th>Total</th><th></th></tr></thead>
           <tbody>${ps.length?ps.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(p=>`<tr>
@@ -4205,6 +4343,55 @@ class App {
         </table>
       </div>`;
     document.getElementById('m-profile').style.display='flex';
+  }
+
+  _custBalance(cid){
+    const ledger=DB.get('_ledger_'+cid,[]);
+    return ledger.reduce((s,e)=>s+e.amount,0);
+  }
+
+  _custLedger(cid){
+    return DB.get('_ledger_'+cid,[]).slice().sort((a,b)=>b.ts.localeCompare(a.ts));
+  }
+
+  openPayment(cid){
+    const cm=this._cmap(); const c=cm[cid]; if(!c) return;
+    document.getElementById('pay-cid').value=cid;
+    document.getElementById('mp-pay-title').textContent=`${c.name} — Payment`;
+    document.getElementById('pay-amount').value='';
+    document.getElementById('pay-note').value='';
+    document.getElementById('pay-type').value='payment';
+    document.getElementById('pay-err').classList.remove('show');
+    const bal=this._custBalance(cid);
+    const info=document.getElementById('pay-balance-info');
+    info.innerHTML=bal===0?`<div class="balance-banner zero"><span class="balance-label">Balance</span><span class="balance-amount">Settled</span></div>`
+      :bal>0?`<div class="balance-banner credit"><span class="balance-label">Credit Balance</span><span class="balance-amount">+${F.money(bal)}</span></div>`
+      :`<div class="balance-banner debt"><span class="balance-label">Outstanding Debt</span><span class="balance-amount">-${F.money(Math.abs(bal))}</span></div>`;
+    document.getElementById('m-payment').style.display='flex';
+  }
+
+  _savePayment(){
+    const cid=document.getElementById('pay-cid').value;
+    const type=document.getElementById('pay-type').value;
+    const amount=+document.getElementById('pay-amount').value;
+    const note=document.getElementById('pay-note').value.trim();
+    if(!amount||amount<=0){ document.getElementById('pay-err').classList.add('show'); return; }
+    const ledger=DB.get('_ledger_'+cid,[]);
+    const entry={
+      id: F.id(),
+      type,
+      amount: type==='payment'? amount : type==='credit'? amount : -amount,
+      note: note||( type==='payment'?'Payment received': type==='credit'?'Credit added':'Debt recorded'),
+      ts: F.ts(),
+      user: this.user?.display||'Admin'
+    };
+    ledger.push(entry);
+    DB.set('_ledger_'+cid, ledger);
+    const cm=this._cmap(); const c=cm[cid]||{};
+    this._audit('edit',`${type==='payment'?'Payment received from':'Balance updated for'} ${c.name||cid}`,`${type}: ${F.money(amount)}${note?' — '+note:''}`);
+    this.closeModal('m-payment');
+    this.renderCusts();
+    this.toast(type==='payment'?'Payment recorded':'Balance updated');
   }
 
   expCusts(){
