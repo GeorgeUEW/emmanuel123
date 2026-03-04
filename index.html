@@ -4082,8 +4082,7 @@ class App {
       this._kpi('Petrol',F.n2(pL)+' L','kpi-icon','background:var(--petrol-bg);color:var(--petrol)',F.pct(pL,tL)+' of fuel sold','var(--petrol)',F.pctN(pL,tL),'<circle cx="12" cy="12" r="10"/>')+
       this._kpi('Diesel',F.n2(dL)+' L','kpi-icon','background:var(--diesel-bg);color:var(--diesel)',F.pct(dL,tL)+' of fuel sold','var(--diesel)',F.pctN(dL,tL),'<rect x="2" y="3" width="20" height="14" rx="2"/>')+
       this._kpi('Customers',custs,'kpi-icon','background:var(--info-bg);color:var(--info)',`${tx} total transactions`,'var(--info)',0,'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>')+
-      this._kpi('Avg Sale',tx?F.money(rev/tx):'—','kpi-icon','background:var(--brand-lt);color:var(--brand)','Per transaction average','var(--brand)',0,'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>')+
-;
+      this._kpi('Avg Sale',tx?F.money(rev/tx):'—','kpi-icon','background:var(--brand-lt);color:var(--brand)','Per transaction average','var(--brand)',0,'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>');
     this._donut('d-donut',pL,dL); document.getElementById('d-dval').textContent=F.n2(tL)+'L'; this._dlegend('d-dleg',pL,dL,tL);
     const tD=f?new Date(f+'T00:00:00'):new Date(); this._trend('d-trend',arr,tD.getMonth(),tD.getFullYear());
     const cm=this._cmap();
