@@ -561,9 +561,9 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 
 .topbar-title {
   font-size: .88rem;
-  font-weight: 700;
-  color: var(--t1);
-  letter-spacing: -.02em;
+  font-weight: 500;
+  color: var(--t3);
+  letter-spacing: 0;
   margin-right: auto;
 }
 /* Desktop topbar brand */
@@ -575,25 +575,25 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   text-decoration: none;
 }
 .topbar-logo {
-  width: 34px; height: 34px;
-  min-width: 34px; min-height: 34px;
-  border-radius: 9px;
+  width: 30px; height: 30px;
+  min-width: 30px; min-height: 30px;
+  border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
-  box-shadow: 0 0 0 2px rgba(249,115,22,.2), 0 2px 8px rgba(249,115,22,.15);
+  box-shadow: 0 1px 4px rgba(0,0,0,.12);
 }
-.topbar-logo img { width: 34px; height: 34px; display: block; }
+.topbar-logo img { width: 30px; height: 30px; display: block; }
 .topbar-brand-text { line-height: 1.2; }
 .topbar-brand-name {
-  font-size: .8rem;
-  font-weight: 900;
-  color: var(--t1);
-  letter-spacing: -.03em;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--t2);
+  letter-spacing: -.01em;
 }
 .topbar-brand-sub {
   font-size: .6rem;
   color: var(--t4);
-  font-weight: 500;
+  font-weight: 400;
   letter-spacing: .01em;
 }
 .topbar-divider {
@@ -603,10 +603,16 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   margin: 0 .4rem;
   flex-shrink: 0;
 }
-/* Hide brand on mobile — sidebar has it */
+/* Hide topbar brand on mobile — sidebar drawer has it */
 @media (max-width: 900px) {
   .topbar-brand { display: none; }
   .topbar-divider { display: none; }
+}
+/* Hide sidebar brand icon+text on desktop — topbar has it */
+@media (min-width: 901px) {
+  .sb-icon { display: none; }
+  .sb-name { display: none; }
+  .sb-sub  { display: none; }
 }
 .topbar-right { display: flex; align-items: center; gap: .4rem; }
 .icon-btn {
@@ -645,7 +651,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   letter-spacing: .02em;
   flex-shrink: 0;
 }
-.user-chip-name { font-size: .75rem; font-weight: 600; color: var(--t1); }
+.user-chip-name { font-size: .75rem; font-weight: 500; color: var(--t2); }
 
 /* ══ SIDEBAR ══ */
 .sidebar {
@@ -682,12 +688,12 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 .sb-icon img { width: 36px; height: 36px; display: block; }
 .sb-name {
   font-size: .8rem;
-  font-weight: 800;
-  color: var(--t1);
-  letter-spacing: -.03em;
+  font-weight: 600;
+  color: var(--t2);
+  letter-spacing: -.01em;
   white-space: nowrap;
 }
-.sb-sub { font-size: .62rem; color: var(--t4); white-space: nowrap; margin-top: .05rem; }
+.sb-sub { font-size: .62rem; color: var(--t4); white-space: nowrap; margin-top: .05rem; font-weight: 400; }
 .sidebar-body { flex: 1; padding: .75rem .6rem; }
 .nav-section { margin-bottom: .25rem; }
 .nav-label {
@@ -764,10 +770,10 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   margin-bottom: 1.25rem;
 }
 .ph-title {
-  font-size: 1.25rem;
-  font-weight: 800;
+  font-size: 1.2rem;
+  font-weight: 600;
   color: var(--t1);
-  letter-spacing: -.035em;
+  letter-spacing: -.02em;
   line-height: 1.2;
 }
 .ph-sub {
@@ -863,10 +869,10 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 }
 .kpi-label {
   font-size: .68rem;
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: .06em;
-  color: var(--t3);
+  letter-spacing: .05em;
+  color: var(--t4);
 }
 .kpi-icon {
   width: 28px; height: 28px;
@@ -876,10 +882,10 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 }
 .kpi-icon svg { width: 13px; height: 13px; }
 .kpi-value {
-  font-size: 1.45rem;
-  font-weight: 800;
+  font-size: 1.4rem;
+  font-weight: 700;
   color: var(--t1);
-  letter-spacing: -.04em;
+  letter-spacing: -.03em;
   line-height: 1.1;
   margin-bottom: .3rem;
   white-space: nowrap;
@@ -920,9 +926,9 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 }
 .card-title {
   font-size: .83rem;
-  font-weight: 700;
-  color: var(--t1);
-  letter-spacing: -.02em;
+  font-weight: 600;
+  color: var(--t2);
+  letter-spacing: -.01em;
 }
 .card-subtitle { font-size: .72rem; color: var(--t4); margin-top: .1rem; }
 .card-body { padding: 1.1rem; }
@@ -938,10 +944,10 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   padding: .55rem .85rem;
   text-align: left;
   font-size: .65rem;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: .06em;
-  color: var(--t3);
+  letter-spacing: .05em;
+  color: var(--t4);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
   background: var(--surface-2);
