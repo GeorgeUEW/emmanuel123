@@ -493,6 +493,12 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 .btn-ghost:hover { background: var(--surface-3); color: var(--t1); }
 .btn-danger { background: var(--danger-bg); color: var(--danger); border-color: var(--danger-bdr); }
 .btn-danger:hover { background: var(--danger); color: #fff; }
+.btn-warning { background:rgba(245,158,11,.12); color:#d97706; border:1px solid rgba(245,158,11,.25); }
+.btn-warning:hover { background:rgba(245,158,11,.22); }
+.btn-info { background:rgba(59,130,246,.12); color:#2563eb; border:1px solid rgba(59,130,246,.25); }
+.btn-info:hover { background:rgba(59,130,246,.22); }
+[data-theme="dark"] .btn-info { color:#60a5fa; }
+[data-theme="dark"] .btn-warning { color:#fbbf24; }
 .btn-petrol { background: var(--petrol-bg); color: var(--petrol); border-color: var(--petrol-bdr); }
 .btn-petrol:hover { background: var(--petrol); color: #fff; }
 .btn-diesel { background: var(--diesel-bg); color: var(--diesel); border-color: var(--diesel-bdr); }
@@ -1996,7 +2002,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
       <div id="auth-register" style="display:none">
         <div class="login-box-eyebrow">New Account</div>
         <h1 class="login-box-title">Create account</h1>
-        <p class="login-box-sub">Join Emmanuel's Fuel Tracking System</p>
+        <p class="login-box-sub">Join Emmanuel's Fuel Tracking System as staff</p>
         <form id="reg-form" novalidate>
           <div class="form-field">
             <label class="form-label" for="r-display">Full Name *</label>
@@ -2026,20 +2032,12 @@ textarea.form-input { resize: vertical; min-height: 70px; }
               </button>
             </div>
           </div>
-          <div class="form-field">
-            <label class="form-label">Select Role</label>
-            <div class="role-cards">
-              <div class="role-card selected" data-role="staff" id="role-staff">
-                <div class="role-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:4px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Staff</div>
-                <div class="role-card-desc">Record sales, view reports</div>
-              </div>
-              <div class="role-card" data-role="admin" id="role-admin">
-                <div class="role-card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:4px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Admin</div>
-                <div class="role-card-desc">Full access + manage users</div>
-              </div>
-            </div>
-            <input type="hidden" id="r-role" value="staff"/>
+          <!-- Staff notice -->
+          <div style="display:flex;align-items:center;gap:.6rem;padding:.65rem .9rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:1rem">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--t4)" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span style="font-size:.75rem;color:var(--t4)">New accounts are created as <strong style="color:var(--t2)">Staff</strong>. The Admin can upgrade your role.</span>
           </div>
+          <input type="hidden" id="r-role" value="staff"/>
           <div id="reg-err" class="login-err"></div>
           <button type="submit" class="btn btn-primary btn-full">Create Account</button>
         </form>
@@ -2231,7 +2229,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
             <div class="ph-sub">Monitor stock levels — purchases auto-deduct in real time</div>
           </div>
           <div class="ph-right">
-            <button class="btn btn-primary btn-sm" id="add-inv-btn">
+            <button class="btn btn-primary btn-sm admin-only" id="add-inv-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Add Delivery
             </button>
@@ -2261,7 +2259,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Export
             </button>
-            <button class="btn btn-primary btn-sm" id="add-cust-btn">
+            <button class="btn btn-primary btn-sm admin-only" id="add-cust-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Add Customer
             </button>
@@ -3154,10 +3152,20 @@ class App {
     // Let Firebase Auth decide if user is logged in
     onAuthStateChanged(fb_auth, async (fbUser) => {
       this._hideLoadingOverlay();
+      const ADMIN_EMAIL = 'eb810111@gmail.com';
       if(fbUser){
-        // Logged in — load their profile from Firestore
-        const profile = DB.get('_users',[]).find(u=>u.uid===fbUser.uid)
-          || { uid:fbUser.uid, email:fbUser.email, display:fbUser.email.split('@')[0], role:'staff', createdAt:new Date().toLocaleDateString('en-GB') };
+        let profile = DB.get('_users',[]).find(u=>u.uid===fbUser.uid);
+        if(!profile){
+          // First time — create profile, admin email always gets admin role
+          const role = fbUser.email.toLowerCase()===ADMIN_EMAIL ? 'admin' : 'staff';
+          profile = { uid:fbUser.uid, email:fbUser.email, display:fbUser.email.split('@')[0], role, createdAt:new Date().toLocaleDateString('en-GB') };
+          const users = DB.get('_users',[]); users.push(profile); DB.set('_users', users);
+        } else if(fbUser.email.toLowerCase()===ADMIN_EMAIL && profile.role!=='admin'){
+          // Ensure admin email is always admin even if someone changed it
+          profile.role = 'admin';
+          const users = DB.get('_users',[]).map(u=>u.uid===profile.uid?{...u,role:'admin'}:u);
+          DB.set('_users', users);
+        }
         this.user = profile;
         this._boot();
       } else {
@@ -3250,6 +3258,8 @@ class App {
       btn.textContent='Creating…'; btn.disabled=true;
       try {
         const cred = await createUserWithEmailAndPassword(fb_auth, email, pwd);
+        const ADMIN_EMAIL = 'eb810111@gmail.com';
+        const role = email.toLowerCase()===ADMIN_EMAIL ? 'admin' : 'staff';
         const newUser = { uid:cred.user.uid, email, display, role, createdAt:new Date().toLocaleDateString('en-GB') };
         const users = DB.get('_users',[]);
         users.push(newUser); DB.set('_users', users);
@@ -3283,6 +3293,9 @@ class App {
     if(sbAv){ sbAv.textContent=F.init(d); sbAv.style.background=av(d); }
     this._refreshTopbar();
     document.documentElement.setAttribute('data-theme',DB.get('_theme','light'));
+    // Apply role-based permissions
+    const isAdmin = this.user.role === 'admin';
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
     if(!this._bound){ this._bind(); this._fillSelects(); this._initRange(); }
     this.nav('dashboard');
     attachListeners(this);
@@ -3608,6 +3621,7 @@ class App {
   }
 
   openCust(id){
+    if(!id && this.user?.role !== 'admin'){ this.toast('Only the Admin can add customers','error'); return; }
     const c=id?(DB.get('_customers',[]).find(x=>x.id===id)||null):null;
     document.getElementById('mc-title').textContent=c?'Edit Customer':'Add Customer';
     ['cf-id','cf-name','cf-car','cf-phone','cf-email','cf-addr'].forEach(fid=>{ const el=document.getElementById(fid); el.value=c?.(fid.replace('cf-','').replace('id','id')||fid.slice(3))||c?.[fid.slice(3)]||''; });
@@ -4033,30 +4047,51 @@ class App {
 
   /* ── USER MANAGEMENT ── */
   renderUsersTable(){
+    const ADMIN_EMAIL = 'eb810111@gmail.com';
     const users=DB.get('_users',[]);
     const tb=document.getElementById('users-tbody'); if(!tb) return;
     if(!users.length){ tb.innerHTML='<tr><td colspan="5" class="empty-row">No users found.</td></tr>'; return; }
     tb.innerHTML=users.map(u=>{
       const isSelf=u.uid===this.user?.uid;
       const isAdmin=this.user?.role==='admin';
+      const isMasterAdmin=u.email?.toLowerCase()===ADMIN_EMAIL;
       const avs=DB.get('_avatars',{}); const img=avs[u.uid||u.email];
       return `<tr>
         <td><div class="row-gap">
           <div class="user-row-av" style="background:${av(u.display||u.email)};overflow:hidden">
             ${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-sm)"/>`:`${F.init(u.display||u.email)}`}
           </div>
-          <div><div class="fw-600">${F.esc(u.display||u.email)}</div>${isSelf?'<div style="font-size:.65rem;color:var(--brand);font-weight:600">You</div>':''}</div>
+          <div>
+            <div class="fw-600">${F.esc(u.display||u.email)}</div>
+            ${isSelf?'<div style="font-size:.65rem;color:var(--brand);font-weight:600">You</div>':''}
+            ${isMasterAdmin?'<div style="font-size:.62rem;color:var(--t4)">Master Admin</div>':''}
+          </div>
         </div></td>
         <td><span style="font-size:.78rem;color:var(--t3)">${F.esc(u.email||'—')}</span></td>
         <td><span class="badge ${u.role==='admin'?'badge-admin':'badge-staff'}">${u.role==='admin'?'Admin':'Staff'}</span></td>
         <td class="text-muted" style="font-size:.75rem">${u.createdAt||'—'}</td>
         <td><div class="row-gap">
-          ${isAdmin?`<button class="btn btn-secondary btn-xs" onclick="A.openEditUser('${u.uid}')">Edit</button>`:''}
-          ${isAdmin&&!isSelf?`<button class="btn btn-danger btn-xs" onclick="A.deleteUser('${u.uid}')">Remove</button>`:''}
-          ${!isAdmin||isSelf?'<span class="text-muted" style="font-size:.72rem">—</span>':''}
+          ${isAdmin&&!isSelf&&!isMasterAdmin?`
+            <button class="btn btn-secondary btn-xs" onclick="A.openEditUser('${u.uid}')">Edit</button>
+            <button class="btn ${u.role==='admin'?'btn-warning':'btn-info'} btn-xs" onclick="A.toggleUserRole('${u.uid}')">${u.role==='admin'?'Make Staff':'Make Admin'}</button>
+            <button class="btn btn-danger btn-xs" onclick="A.deleteUser('${u.uid}')">Remove</button>
+          `:''}
+          ${isSelf||isMasterAdmin?'<span class="text-muted" style="font-size:.72rem">—</span>':''}
         </div></td>
       </tr>`;
     }).join('');
+  }
+
+  toggleUserRole(uid){
+    const ADMIN_EMAIL = 'eb810111@gmail.com';
+    let users=DB.get('_users',[]); const u=users.find(x=>x.uid===uid);
+    if(!u||u.email?.toLowerCase()===ADMIN_EMAIL) return;
+    const newRole = u.role==='admin' ? 'staff' : 'admin';
+    users=users.map(x=>x.uid===uid?{...x,role:newRole}:x);
+    DB.set('_users',users);
+    this._audit('settings',`Role changed: ${u.display||u.email}`,`New role: ${newRole}`);
+    this.toast(`${u.display||u.email} is now ${newRole}`);
+    this.renderUsersTable();
   }
 
   openEditUser(uid){
