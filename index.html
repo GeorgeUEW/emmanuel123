@@ -1356,7 +1356,38 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 .inv-stat-lbl { font-size: .62rem; color: var(--t4); font-weight: 500; margin-bottom: .2rem; text-transform: uppercase; letter-spacing: .04em; }
 .inv-stat-val { font-size: .82rem; font-weight: 500; color: var(--t3); }
 
-/* ══ ALERT / INFO BOXES ══ */
+/* ══ FORECAST STRIP ══ */
+.forecast-strip {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-top: .85rem;
+  padding: .65rem .85rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.forecast-strip.urgent   { background: var(--danger-bg);  border-color: var(--danger-bdr); }
+.forecast-strip.warning  { background: var(--warn-bg);    border-color: var(--warn-bdr); }
+.forecast-strip.ok       { background: var(--diesel-bg);  border-color: var(--diesel-bdr); }
+.forecast-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  background: var(--surface-3);
+}
+.forecast-strip.urgent  .forecast-icon { background: var(--danger-bg);  color: var(--danger); }
+.forecast-strip.warning .forecast-icon { background: var(--warn-bg);    color: var(--warn); }
+.forecast-strip.ok      .forecast-icon { background: var(--diesel-bg);  color: var(--diesel); }
+.forecast-icon svg { width: 13px; height: 13px; }
+.forecast-days {
+  font-size: 1rem; font-weight: 700; color: var(--t1); line-height: 1;
+}
+.forecast-strip.urgent  .forecast-days { color: var(--danger); }
+.forecast-strip.warning .forecast-days { color: var(--warn); }
+.forecast-strip.ok      .forecast-days { color: var(--diesel); }
+.forecast-meta { font-size: .7rem; color: var(--t3); margin-top: .1rem; line-height: 1.3; }
+.forecast-rate { font-size: .68rem; color: var(--t4); margin-left: auto; text-align: right; white-space: nowrap; }
 .alert {
   display: flex;
   align-items: flex-start;
@@ -3971,13 +4002,26 @@ class App {
     const pL=arr.filter(p=>p.fuel==='Petrol').reduce((s,p)=>s+p.litres,0);
     const dL=arr.filter(p=>p.fuel==='Diesel').reduce((s,p)=>s+p.litres,0);
     const tL=pL+dL, rev=arr.reduce((s,p)=>s+p.total,0), tx=arr.length, custs=[...new Set(arr.map(p=>p.cid))].length;
+    const inv=INV.totals();
+    const pRem=Math.max(0,(inv.petrolTotal||0)-INV.sold('Petrol'));
+    const dRem=Math.max(0,(inv.dieselTotal||0)-INV.sold('Diesel'));
+    const fcP=this._forecast('Petrol',pRem), fcD=this._forecast('Diesel',dRem);
+    const _fcKpi=(fuel,fc,rem)=>{
+      const clr=fuel==='Petrol'?'var(--petrol)':'var(--diesel)';
+      const bg=fuel==='Petrol'?'var(--petrol-bg)':'var(--diesel-bg)';
+      const accent=fc.level==='urgent'?'var(--danger)':fc.level==='warning'?'var(--warn)':clr;
+      const val=fc.days===null?'No data':fc.days===0?'Critical!':fc.days===1?'~1 day':'~'+fc.days+' days';
+      const sub=fc.days===null?'Record sales to forecast':`${F.n2(rem)} L · ${fc.rate||0} L/day`;
+      return this._kpi(fuel+' Runway',val,'kpi-icon',`background:${bg};color:${accent}`,sub,accent,fc.days===null?0:Math.min(100,Math.round((fc.days||0)/30*100)),'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>');
+    };
     document.getElementById('d-kpis').innerHTML=
       this._kpi('Total Revenue',F.money(rev),'kpi-icon','background:var(--brand-lt);color:var(--brand)',`${tx} transactions`,'var(--brand)',100,'<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>')+
       this._kpi('Total Fuel Sold',F.n2(tL)+' L','kpi-icon','background:var(--petrol-bg);color:var(--petrol)','Petrol + Diesel combined','var(--petrol)',F.pctN(pL,tL),'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>')+
       this._kpi('Petrol',F.n2(pL)+' L','kpi-icon','background:var(--petrol-bg);color:var(--petrol)',F.pct(pL,tL)+' of fuel sold','var(--petrol)',F.pctN(pL,tL),'<circle cx="12" cy="12" r="10"/>')+
       this._kpi('Diesel',F.n2(dL)+' L','kpi-icon','background:var(--diesel-bg);color:var(--diesel)',F.pct(dL,tL)+' of fuel sold','var(--diesel)',F.pctN(dL,tL),'<rect x="2" y="3" width="20" height="14" rx="2"/>')+
       this._kpi('Customers',custs,'kpi-icon','background:var(--info-bg);color:var(--info)',`${tx} total transactions`,'var(--info)',0,'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>')+
-      this._kpi('Avg Sale',tx?F.money(rev/tx):'—','kpi-icon','background:var(--brand-lt);color:var(--brand)','Per transaction average','var(--brand)',0,'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>');
+      this._kpi('Avg Sale',tx?F.money(rev/tx):'—','kpi-icon','background:var(--brand-lt);color:var(--brand)','Per transaction average','var(--brand)',0,'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>')+
+      _fcKpi('Petrol',fcP,pRem)+_fcKpi('Diesel',fcD,dRem);
     this._donut('d-donut',pL,dL); document.getElementById('d-dval').textContent=F.n2(tL)+'L'; this._dlegend('d-dleg',pL,dL,tL);
     const tD=f?new Date(f+'T00:00:00'):new Date(); this._trend('d-trend',arr,tD.getMonth(),tD.getFullYear());
     const cm=this._cmap();
@@ -4018,8 +4062,52 @@ class App {
     </tr>`).join('');
   }
 
+  _forecast(fuel, remain){
+    const ps = DB.get('_purchases', []);
+    const now = new Date();
+    const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 30);
+    const cutoffStr = cutoff.toISOString().slice(0,10);
+    const recent = ps.filter(p => p.fuel === fuel && p.date >= cutoffStr);
+    if(!recent.length) return { days: null, rate: 0, level: 'none' };
+    // Find actual date span of recent purchases
+    const dates = recent.map(p => p.date).sort();
+    const firstDate = new Date(dates[0]+'T00:00:00');
+    const spanDays = Math.max(1, Math.round((now - firstDate) / 86400000));
+    const totalSold = recent.reduce((s,p) => s + p.litres, 0);
+    const rate = totalSold / spanDays; // litres per day
+    if(rate <= 0) return { days: null, rate: 0, level: 'none' };
+    const days = Math.floor(remain / rate);
+    const level = days <= 3 ? 'urgent' : days <= 10 ? 'warning' : 'ok';
+    return { days, rate: Math.round(rate * 10) / 10, level, spanDays };
+  }
+
   _invCard(label,cls,total,sold,remain,pct){
     const clr=cls==='petrol'?'#0EA5E9':'#10B981';
+    const fc = this._forecast(label, remain);
+    let forecastHtml = '';
+    if(fc.days === null){
+      forecastHtml = `<div class="forecast-strip">
+        <div class="forecast-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+        <div><div class="forecast-days" style="font-size:.78rem;color:var(--t3)">No forecast yet</div><div class="forecast-meta">Record more sales to enable forecasting</div></div>
+      </div>`;
+    } else {
+      const iconPath = fc.level==='urgent'
+        ? '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'
+        : fc.level==='warning'
+        ? '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'
+        : '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>';
+      const label2 = fc.days === 0 ? 'Critical — restock now!' : fc.days === 1 ? '~1 day left' : `~${fc.days} days left`;
+      const runDate = new Date(); runDate.setDate(runDate.getDate() + fc.days);
+      const runLabel = runDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+      forecastHtml = `<div class="forecast-strip ${fc.level}">
+        <div class="forecast-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">${iconPath}</svg></div>
+        <div style="flex:1;min-width:0">
+          <div class="forecast-days">${label2}</div>
+          <div class="forecast-meta">Est. runs out ${runLabel}</div>
+        </div>
+        <div class="forecast-rate">${fc.rate} L/day<br><span style="color:var(--t5)">30-day avg</span></div>
+      </div>`;
+    }
     return `<div class="inv-card ${cls}-card">
       <div class="inv-card-header">
         <div>
@@ -4030,6 +4118,7 @@ class App {
         <div class="mini-ring"><canvas id="mr-${cls}" width="54" height="54"></canvas><div class="mini-ring-val">${pct.toFixed(0)}%</div></div>
       </div>
       <div class="inv-bar-bg"><div class="inv-bar-fill ${cls}" style="width:${pct}%"></div></div>
+      ${forecastHtml}
       <div class="inv-stats">
         <div class="inv-stat-item"><div class="inv-stat-lbl">Total Added</div><div class="inv-stat-val">${F.n2(total)} L</div></div>
         <div class="inv-stat-item"><div class="inv-stat-lbl">Sold</div><div class="inv-stat-val" style="color:${clr}">${F.n2(sold)} L</div></div>
@@ -5082,6 +5171,10 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
     if(thresh.diesel>0 && dRem<=thresh.diesel){
       this._pushNotif('low-diesel',`⚠️ Diesel Stock Low`,`Only ${Math.round(dRem).toLocaleString()} L remaining — threshold is ${thresh.diesel.toLocaleString()} L. Restock soon.`,'danger');
     }
+    // Forecast urgency notifications
+    const fcP=this._forecast('Petrol',pRem), fcD=this._forecast('Diesel',dRem);
+    if(fcP.days!==null && fcP.days<=3) this._pushNotif('fc-petrol-urgent',`🔴 Petrol Running Out`,`At current rate (${fcP.rate} L/day), Petrol will run out in ~${fcP.days} day${fcP.days===1?'':'s'}. Restock immediately.`,'danger');
+    if(fcD.days!==null && fcD.days<=3) this._pushNotif('fc-diesel-urgent',`🔴 Diesel Running Out`,`At current rate (${fcD.rate} L/day), Diesel will run out in ~${fcD.days} day${fcD.days===1?'':'s'}. Restock immediately.`,'danger');
   }
 
   _pushNotif(id, title, body, level='warn'){
