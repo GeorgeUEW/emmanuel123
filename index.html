@@ -17,6 +17,9 @@ if('serviceWorker' in navigator && !sessionStorage.getItem('sw_cleared')){
 }
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <title>Emmanuel's Fuel Tracking System</title>
 <meta name="description" content="Professional fuel inventory management — real-time stock, customer analytics, and business intelligence."/>
 
@@ -54,7 +57,8 @@ if('serviceWorker' in navigator && !sessionStorage.getItem('sw_cleared')){
    Inter typeface · Orange & Black · Professional
 ═══════════════════════════════════════════════ */
 :root {
-  --f: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --f: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --f-mono: 'DM Mono', 'Fira Mono', monospace;
 
   /* ── Brand: Orange (refined, deeper) ── */
   --brand:        #E8600A;
@@ -196,7 +200,7 @@ img { display: block; max-width: 100%; }
 .fw-700 { font-weight: 700; }
 .fw-800 { font-weight: 800; }
 .fw-900 { font-weight: 900; }
-.mono { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
 
 /* ══ LOGIN ══ */
 .login-wrap {
