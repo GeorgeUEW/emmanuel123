@@ -2,6 +2,15 @@
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
+<!-- Kill any stale service worker caches immediately -->
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs=>{
+    regs.forEach(r=>r.unregister());
+  });
+  caches.keys().then(keys=>keys.forEach(k=>caches.delete(k)));
+}
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Emmanuel's Fuel Tracking System</title>
 <meta name="description" content="Professional fuel inventory management — real-time stock, customer analytics, and business intelligence."/>
@@ -3740,13 +3749,14 @@ class App {
 
   async init(){
     this._showLoadingOverlay();
-    // Safety timeout — if Firebase hangs, hide loader after 8s and proceed
+    // Safety timeout — never stay on loading screen more than 5s
     const safetyTimer = setTimeout(()=>{
       this._hideLoadingOverlay();
       if(!this.user) this._showLogin();
-    }, 8000);
-    try { await loadAllFromFirestore(); } catch(e){ console.warn('Firestore load failed', e); }
-    // Let Firebase Auth decide if user is logged in
+    }, 5000);
+    // Start Firestore load in background — don't await it
+    loadAllFromFirestore().catch(e => console.warn('Firestore load failed', e));
+    // Let Firebase Auth decide immediately
     onAuthStateChanged(fb_auth, async (fbUser) => {
       clearTimeout(safetyTimer);
       this._hideLoadingOverlay();
