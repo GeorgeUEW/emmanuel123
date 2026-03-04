@@ -610,9 +610,10 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 }
 /* Hide sidebar brand icon+text on desktop — topbar has it */
 @media (min-width: 901px) {
-  .sb-icon { display: none; }
-  .sb-name { display: none; }
-  .sb-sub  { display: none; }
+  .sb-icon { display: none !important; }
+  .sb-name { display: none !important; }
+  .sb-sub  { display: none !important; }
+  .sb-brand-row { display: none !important; }
 }
 .topbar-right { display: flex; align-items: center; gap: .4rem; }
 .icon-btn {
