@@ -987,10 +987,10 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 .donut-wrap {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  padding: 1.1rem;
+  gap: 1.25rem;
+  padding: 1.1rem 1.1rem 1.25rem;
 }
-.donut-ring { position: relative; width: 130px; height: 130px; flex-shrink: 0; }
+.donut-ring { position: relative; width: 160px; height: 160px; flex-shrink: 0; }
 .donut-ring canvas { position: absolute; inset: 0; }
 .donut-center {
   position: absolute; inset: 0;
@@ -1001,7 +1001,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 }
 .donut-val { font-size: .95rem; font-weight: 800; color: var(--t1); letter-spacing: -.04em; }
 .donut-lbl { font-size: .58rem; color: var(--t4); margin-top: .1rem; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
-.donut-legend { display: flex; flex-direction: column; gap: .7rem; flex: 1; }
+.donut-legend { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .legend-row { display: flex; align-items: center; gap: .55rem; }
 .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .legend-label { font-size: .78rem; color: var(--t2); font-weight: 500; }
@@ -1017,7 +1017,8 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 }
 
 /* ══ CHART ══ */
-.chart-box { height: 180px; position: relative; }
+.chart-box { height: 185px; position: relative; overflow: hidden; }
+.chart-box canvas { display: block; width: 100% !important; }
 
 /* ══ FORM GRID ══ */
 .fg {
@@ -1779,12 +1780,12 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   .donut-wrap {
     flex-direction: row;
     align-items: center;
-    gap: 1rem;
-    padding: .85rem 1rem;
+    gap: .85rem;
+    padding: 1rem;
   }
   .donut-ring {
-    width: 110px;
-    height: 110px;
+    width: 140px;
+    height: 140px;
     flex-shrink: 0;
   }
   .donut-legend {
@@ -1792,7 +1793,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     min-width: 0;
   }
   .chart-box {
-    height: 160px;
+    height: 170px;
   }
 
   /* Page header */
@@ -1816,8 +1817,8 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     align-items: center;
     gap: .75rem;
   }
-  .donut-ring { width: 120px; height: 120px; }
-  .chart-box { height: 145px; }
+  .donut-ring { width: 150px; height: 150px; }
+  .chart-box { height: 155px; }
 }
 
 @media (max-width: 360px) {
@@ -5045,57 +5046,302 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
   }
 
   /* ── CHARTS ── */
-  _donut(id,petrol,diesel){
-    const c=document.getElementById(id); if(!c) return;
-    const ctx=c.getContext('2d'), dpr=devicePixelRatio||1, sz=130;
-    c.width=sz*dpr; c.height=sz*dpr; ctx.scale(dpr,dpr); ctx.clearRect(0,0,sz,sz);
-    const cx=sz/2, cy=sz/2, r=55, inner=34, tot=petrol+diesel;
-    const dark=document.documentElement.getAttribute('data-theme')==='dark';
-    const bg=dark?'#111111':'#FFFFFF';
-    if(!tot){ ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.strokeStyle=dark?'rgba(255,255,255,.07)':'rgba(0,0,0,.07)'; ctx.lineWidth=14; ctx.stroke(); }
-    else { let a=-Math.PI/2; [[petrol,'#F97316'],[diesel,'#10B981']].forEach(([v,clr])=>{ if(v<=0) return; const s=(v/tot)*Math.PI*2; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+s); ctx.closePath(); ctx.fillStyle=clr; ctx.fill(); a+=s; }); }
-    ctx.beginPath(); ctx.arc(cx,cy,inner,0,Math.PI*2); ctx.fillStyle=bg; ctx.fill();
+  _donut(id, petrol, diesel){
+    const c = document.getElementById(id); if(!c) return;
+    const dpr = devicePixelRatio || 1;
+    const sz = 160;
+    c.width = sz * dpr; c.height = sz * dpr;
+    c.style.width = sz + 'px'; c.style.height = sz + 'px';
+    const ctx = c.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, sz, sz);
+    const cx = sz / 2, cy = sz / 2, R = 68, thick = 18;
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const tot = petrol + diesel;
+
+    // Background track
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.strokeStyle = dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)';
+    ctx.lineWidth = thick;
+    ctx.stroke();
+
+    if(!tot) return;
+
+    const segments = [];
+    if(petrol > 0) segments.push({ v: petrol, c1: '#F97316', c2: '#FB923C' });
+    if(diesel > 0) segments.push({ v: diesel, c1: '#10B981', c2: '#34D399' });
+
+    let angle = -Math.PI / 2;
+    const gap = segments.length > 1 ? 0.04 : 0;
+
+    segments.forEach(seg => {
+      const sweep = (seg.v / tot) * Math.PI * 2 - gap;
+      // Gradient stroke
+      const x1 = cx + Math.cos(angle) * R, y1 = cy + Math.sin(angle) * R;
+      const x2 = cx + Math.cos(angle + sweep) * R, y2 = cy + Math.sin(angle + sweep) * R;
+      const grad = ctx.createLinearGradient(x1, y1, x2, y2);
+      grad.addColorStop(0, seg.c1);
+      grad.addColorStop(1, seg.c2);
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, angle, angle + sweep);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = thick;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      // End cap glow dot
+      const ex = cx + Math.cos(angle + sweep) * R, ey = cy + Math.sin(angle + sweep) * R;
+      ctx.beginPath();
+      ctx.arc(ex, ey, thick / 2 - 1, 0, Math.PI * 2);
+      ctx.fillStyle = seg.c2;
+      ctx.fill();
+      angle += sweep + gap;
+    });
+
+    // Center glow
+    const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, R - thick);
+    glow.addColorStop(0, dark ? 'rgba(249,115,22,.08)' : 'rgba(249,115,22,.05)');
+    glow.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(cx, cy, R - thick, 0, Math.PI * 2);
+    ctx.fillStyle = glow;
+    ctx.fill();
   }
 
-  _dlegend(id,p,d,t){
-    const el=document.getElementById(id); if(!el) return;
-    el.innerHTML=`
-      <div class="legend-row"><div class="legend-dot" style="background:#F97316"></div><span class="legend-label">Petrol</span><span class="legend-val">${F.n2(p)} L</span><span class="legend-pct">${F.pct(p,t)}</span></div>
-      <div class="legend-row"><div class="legend-dot" style="background:#10B981"></div><span class="legend-label">Diesel</span><span class="legend-val">${F.n2(d)} L</span><span class="legend-pct">${F.pct(d,t)}</span></div>`;
+  _dlegend(id, p, d, t){
+    const el = document.getElementById(id); if(!el) return;
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const pPct = t ? Math.round(p / t * 100) : 0;
+    const dPct = t ? Math.round(d / t * 100) : 0;
+
+    const item = (label, val, pct, c1, c2, barPct) => `
+      <div style="margin-bottom:.85rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem;">
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <div style="width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,${c1},${c2});flex-shrink:0;box-shadow:0 0 6px ${c1}66;"></div>
+            <span style="font-size:.75rem;font-weight:600;color:${dark?'rgba(255,255,255,.7)':'#374151'};">${label}</span>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:.8rem;font-weight:800;color:${dark?'#fff':'#111'};letter-spacing:-.02em;">${F.n2(val)}<span style="font-size:.62rem;font-weight:500;color:${dark?'rgba(255,255,255,.4)':'#9ca3af'};margin-left:2px;">L</span></span>
+          </div>
+        </div>
+        <div style="height:5px;border-radius:99px;background:${dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.06)'};overflow:hidden;">
+          <div style="height:100%;width:${barPct}%;border-radius:99px;background:linear-gradient(90deg,${c1},${c2});transition:width .6s ease;"></div>
+        </div>
+        <div style="font-size:.62rem;font-weight:700;color:${c1};margin-top:.25rem;">${pct}%</div>
+      </div>`;
+
+    el.innerHTML =
+      item('Petrol', p, pPct, '#F97316', '#FB923C', pPct) +
+      item('Diesel', d, dPct, '#10B981', '#34D399', dPct);
   }
 
-  _trend(id,ps,month,year){
-    const canvas=document.getElementById(id); if(!canvas) return;
-    const ctx=canvas.getContext('2d'), dpr=devicePixelRatio||1, w=canvas.offsetWidth||480, h=canvas.offsetHeight||180;
-    canvas.width=w*dpr; canvas.height=h*dpr; ctx.scale(dpr,dpr); ctx.clearRect(0,0,w,h);
-    const days=new Date(year,month+1,0).getDate(), pD=new Array(days).fill(0), dD=new Array(days).fill(0);
-    ps.forEach(p=>{ const day=new Date(p.date+'T00:00:00').getDate()-1; if(day>=0&&day<days){ if(p.fuel==='Petrol') pD[day]+=p.litres; else dD[day]+=p.litres; } });
-    const maxV=Math.max(...pD,...dD,1), pad={t:12,r:12,b:28,l:46}, cw=w-pad.l-pad.r, ch=h-pad.t-pad.b;
-    const dark=document.documentElement.getAttribute('data-theme')==='dark';
-    const tc=dark?'rgba(255,255,255,.25)':'rgba(0,0,0,.25)', gc=dark?'rgba(255,255,255,.04)':'rgba(0,0,0,.04)';
-    ctx.font=`500 10px Inter, sans-serif`;
-    for(let i=0;i<=4;i++){ const y=pad.t+(ch/4)*i; ctx.beginPath(); ctx.strokeStyle=gc; ctx.lineWidth=1; ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cw,y); ctx.stroke(); ctx.fillStyle=tc; ctx.textAlign='right'; ctx.fillText((maxV-(maxV/4)*i).toFixed(0),pad.l-4,y+3); }
-    for(let i=0;i<days;i++){ if((i+1)%5!==0&&i!==0&&i!==days-1) continue; const x=pad.l+(i/(days-1||1))*cw; ctx.fillStyle=tc; ctx.textAlign='center'; ctx.fillText(String(i+1),x,h-pad.b+13); }
-    [[pD,'#F97316'],[dD,'#10B981']].forEach(([data,clr])=>{
-      ctx.beginPath(); data.forEach((v,i)=>{ const x=pad.l+(i/(days-1||1))*cw, y=pad.t+ch-(v/maxV)*ch; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
-      ctx.strokeStyle=clr; ctx.lineWidth=2; ctx.lineJoin='round'; ctx.stroke();
-      ctx.lineTo(pad.l+cw,pad.t+ch); ctx.lineTo(pad.l,pad.t+ch); ctx.closePath(); ctx.fillStyle=clr+'18'; ctx.fill();
+  _trend(id, ps, month, year){
+    const canvas = document.getElementById(id); if(!canvas) return;
+    const dpr = devicePixelRatio || 1;
+    const w = canvas.parentElement?.offsetWidth || canvas.offsetWidth || 400;
+    const h = 185;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+
+    const days = new Date(year, month + 1, 0).getDate();
+    const pD = new Array(days).fill(0), dD = new Array(days).fill(0);
+    ps.forEach(p => {
+      const day = new Date(p.date + 'T00:00:00').getDate() - 1;
+      if(day >= 0 && day < days){ if(p.fuel === 'Petrol') pD[day] += p.litres; else dD[day] += p.litres; }
+    });
+
+    const maxV = Math.max(...pD, ...dD, 1);
+    const pad = { t: 18, r: 16, b: 32, l: 48 };
+    const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const tc = dark ? 'rgba(255,255,255,.22)' : 'rgba(0,0,0,.22)';
+    const gc = dark ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.05)';
+
+    ctx.font = '500 9.5px Inter, system-ui, sans-serif';
+
+    // Grid lines + y-axis labels
+    const steps = 4;
+    for(let i = 0; i <= steps; i++){
+      const y = pad.t + (ch / steps) * i;
+      ctx.beginPath();
+      ctx.strokeStyle = gc;
+      ctx.lineWidth = 1;
+      if(i < steps){ ctx.setLineDash([3, 4]); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke(); ctx.setLineDash([]); }
+      const val = maxV - (maxV / steps) * i;
+      ctx.fillStyle = tc;
+      ctx.textAlign = 'right';
+      ctx.fillText(val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val.toFixed(0), pad.l - 6, y + 3.5);
+    }
+
+    // X-axis labels (every 5 days)
+    for(let i = 0; i < days; i++){
+      if((i + 1) % 5 !== 0 && i !== 0 && i !== days - 1) continue;
+      const x = pad.l + (i / (days - 1 || 1)) * cw;
+      ctx.fillStyle = tc;
+      ctx.textAlign = 'center';
+      ctx.fillText(String(i + 1), x, h - pad.b + 13);
+    }
+
+    // Smooth bezier line + gradient fill helper
+    const drawLine = (data, c1, c2) => {
+      const pts = data.map((v, i) => ({
+        x: pad.l + (i / (days - 1 || 1)) * cw,
+        y: pad.t + ch - (v / maxV) * ch
+      }));
+
+      // Gradient fill
+      const gradFill = ctx.createLinearGradient(0, pad.t, 0, pad.t + ch);
+      gradFill.addColorStop(0, c1 + '55');
+      gradFill.addColorStop(0.6, c1 + '18');
+      gradFill.addColorStop(1, c1 + '00');
+
+      ctx.beginPath();
+      pts.forEach((p, i) => {
+        if(i === 0){ ctx.moveTo(p.x, p.y); return; }
+        const prev = pts[i - 1];
+        const cpx = (prev.x + p.x) / 2;
+        ctx.bezierCurveTo(cpx, prev.y, cpx, p.y, p.x, p.y);
+      });
+      // Close fill area
+      ctx.lineTo(pts[pts.length - 1].x, pad.t + ch);
+      ctx.lineTo(pts[0].x, pad.t + ch);
+      ctx.closePath();
+      ctx.fillStyle = gradFill;
+      ctx.fill();
+
+      // Stroke line with gradient
+      const gradLine = ctx.createLinearGradient(pad.l, 0, pad.l + cw, 0);
+      gradLine.addColorStop(0, c1);
+      gradLine.addColorStop(1, c2);
+      ctx.beginPath();
+      pts.forEach((p, i) => {
+        if(i === 0){ ctx.moveTo(p.x, p.y); return; }
+        const prev = pts[i - 1];
+        const cpx = (prev.x + p.x) / 2;
+        ctx.bezierCurveTo(cpx, prev.y, cpx, p.y, p.x, p.y);
+      });
+      ctx.strokeStyle = gradLine;
+      ctx.lineWidth = 2.5;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // Highlight dots on non-zero data points
+      pts.forEach((p, i) => {
+        if(data[i] === 0) return;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = c2;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+      });
+    };
+
+    drawLine(dD, '#10B981', '#34D399');
+    drawLine(pD, '#F97316', '#FDBA74');
+
+    // Legend inside chart
+    const legends = [['Petrol', '#F97316'], ['Diesel', '#10B981']];
+    let lx = pad.l;
+    legends.forEach(([lbl, clr]) => {
+      ctx.beginPath();
+      ctx.arc(lx + 5, pad.t - 5, 4, 0, Math.PI * 2);
+      ctx.fillStyle = clr;
+      ctx.fill();
+      ctx.fillStyle = tc;
+      ctx.textAlign = 'left';
+      ctx.font = '600 9px Inter, system-ui, sans-serif';
+      ctx.fillText(lbl, lx + 13, pad.t - 1);
+      lx += 60;
     });
   }
 
-  _barChart(id,mData){
-    const canvas=document.getElementById(id); if(!canvas) return;
-    const ctx=canvas.getContext('2d'), dpr=devicePixelRatio||1, w=canvas.offsetWidth||700, h=canvas.offsetHeight||210;
-    canvas.width=w*dpr; canvas.height=h*dpr; ctx.scale(dpr,dpr); ctx.clearRect(0,0,w,h);
-    const maxRev=Math.max(...mData.map(m=>m.rev),1), pad={t:15,r:15,b:34,l:62}, cw=w-pad.l-pad.r, ch=h-pad.t-pad.b;
-    const dark=document.documentElement.getAttribute('data-theme')==='dark';
-    const tc=dark?'rgba(255,255,255,.25)':'rgba(0,0,0,.25)', gc=dark?'rgba(255,255,255,.04)':'rgba(0,0,0,.04)';
-    ctx.font='500 10px Inter, sans-serif';
-    for(let i=0;i<=4;i++){ const y=pad.t+(ch/4)*i, v=maxRev-(maxRev/4)*i; ctx.beginPath(); ctx.strokeStyle=gc; ctx.lineWidth=1; ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cw,y); ctx.stroke(); ctx.fillStyle=tc; ctx.textAlign='right'; ctx.fillText(v>=1000?(v/1000).toFixed(0)+'K':v.toFixed(0),pad.l-4,y+3); }
-    const bw=Math.min(26,(cw/12)*0.55), curM=new Date().getMonth();
-    mData.forEach((m,i)=>{ const x=pad.l+(cw/12)*i+(cw/12)/2, bh=(m.rev/maxRev)*ch, y=pad.t+ch-bh;
-      if(bh>0){ ctx.fillStyle=i===curM?'#F97316':'#FB923C'; ctx.globalAlpha=i===curM?1:.55; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(x-bw/2,y,bw,bh,[3,3,0,0]); else ctx.rect(x-bw/2,y,bw,bh); ctx.fill(); ctx.globalAlpha=1; }
-      ctx.fillStyle=tc; ctx.textAlign='center'; ctx.fillText(MS[i],x,h-pad.b+13);
+  _barChart(id, mData){
+    const canvas = document.getElementById(id); if(!canvas) return;
+    const dpr = devicePixelRatio || 1;
+    const w = canvas.parentElement?.offsetWidth || canvas.offsetWidth || 600;
+    const h = 215;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+
+    const maxRev = Math.max(...mData.map(m => m.rev), 1);
+    const pad = { t: 18, r: 16, b: 36, l: 58 };
+    const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const tc = dark ? 'rgba(255,255,255,.22)' : 'rgba(0,0,0,.22)';
+    const gc = dark ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.05)';
+    const curM = new Date().getMonth();
+
+    ctx.font = '500 9.5px Inter, system-ui, sans-serif';
+
+    // Grid lines
+    for(let i = 0; i <= 4; i++){
+      const y = pad.t + (ch / 4) * i, v = maxRev - (maxRev / 4) * i;
+      ctx.beginPath(); ctx.strokeStyle = gc; ctx.lineWidth = 1;
+      ctx.setLineDash([3, 4]); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = tc; ctx.textAlign = 'right';
+      ctx.fillText(v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v.toFixed(0), pad.l - 6, y + 3.5);
+    }
+
+    const slotW = cw / 12;
+    const bw = Math.max(8, Math.min(28, slotW * 0.55));
+
+    mData.forEach((m, i) => {
+      const cx = pad.l + slotW * i + slotW / 2;
+      const bh = (m.rev / maxRev) * ch;
+      const by = pad.t + ch - bh;
+      const isCur = i === curM;
+
+      if(bh > 1){
+        // Gradient bar
+        const grad = ctx.createLinearGradient(0, by, 0, by + bh);
+        if(isCur){
+          grad.addColorStop(0, '#F97316');
+          grad.addColorStop(1, '#FB923C88');
+        } else {
+          grad.addColorStop(0, dark ? 'rgba(249,115,22,.55)' : 'rgba(249,115,22,.45)');
+          grad.addColorStop(1, dark ? 'rgba(249,115,22,.2)' : 'rgba(249,115,22,.15)');
+        }
+        ctx.beginPath();
+        if(ctx.roundRect) ctx.roundRect(cx - bw / 2, by, bw, bh, [4, 4, 0, 0]);
+        else ctx.rect(cx - bw / 2, by, bw, bh);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Highlight top cap for current month
+        if(isCur){
+          ctx.beginPath();
+          ctx.rect(cx - bw / 2, by, bw, 3);
+          ctx.fillStyle = '#fff';
+          ctx.globalAlpha = 0.35;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+
+        // Value label on top of bar (only if bar is tall enough)
+        if(bh > 20){
+          ctx.fillStyle = isCur ? '#F97316' : tc;
+          ctx.textAlign = 'center';
+          ctx.font = isCur ? '700 9px Inter,sans-serif' : '500 8.5px Inter,sans-serif';
+          ctx.fillText(m.rev >= 1000 ? (m.rev / 1000).toFixed(0) + 'K' : m.rev.toFixed(0), cx, by - 4);
+        }
+      }
+
+      // Month label
+      ctx.fillStyle = isCur ? '#F97316' : tc;
+      ctx.font = isCur ? '700 9.5px Inter,sans-serif' : '500 9px Inter,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(MS[i], cx, h - pad.b + 14);
     });
   }
 
@@ -5112,8 +5358,20 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f4f4f
 }
 
 const A=new App();
-window.A = A; // Expose globally so inline onclick handlers work with ES modules
-document.addEventListener('DOMContentLoaded',()=>A.init());
+window.A = A;
+document.addEventListener('DOMContentLoaded',()=>{
+  A.init();
+  // Redraw charts when screen resizes (mobile orientation change etc)
+  if(window.ResizeObserver){
+    const ro = new ResizeObserver(()=>{
+      if(A.page==='dashboard') A.renderDash();
+      if(A.page==='monthly')   A.renderMonthly();
+      if(A.page==='yearly')    A.renderYearly();
+    });
+    const main = document.querySelector('.main');
+    if(main) ro.observe(main);
+  }
+});
 </script>
 
 <!-- ══ PWA: Service Worker + Install Banner ══ -->
