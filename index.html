@@ -2310,6 +2310,232 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 }
 </style>
 
+<!-- ══════════════════ UPGRADE NOTICE ══════════════════ -->
+<div id="upgrade-notice" style="display:none;position:fixed;inset:0;z-index:9998;background:var(--surface);align-items:center;justify-content:center;flex-direction:column;padding:2rem;">
+  <style>
+    @keyframes upgradeIn {
+      from { opacity:0; transform:translateY(24px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes badgePulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(232,96,10,.35); }
+      50%      { box-shadow: 0 0 0 14px rgba(232,96,10,.0); }
+    }
+    .upg-card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2.8rem 2.4rem 2.4rem;
+      text-align: center;
+      box-shadow: var(--shadow-xl);
+      animation: upgradeIn .55s cubic-bezier(.2,.6,.3,1) both;
+    }
+    .upg-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      background: var(--brand-lt);
+      border: 1px solid var(--brand-lt2);
+      border-radius: 99px;
+      padding: .35rem .9rem;
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--brand);
+      margin-bottom: 1.6rem;
+      animation: badgePulse 2s ease-in-out infinite;
+    }
+    .upg-badge svg { width:12px; height:12px; flex-shrink:0; }
+    .upg-icon-wrap {
+      width: 72px; height: 72px;
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dk) 100%);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.6rem;
+      box-shadow: 0 8px 24px rgba(232,96,10,.28);
+    }
+    .upg-icon-wrap svg { width:32px; height:32px; color:#fff; }
+    .upg-title {
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: var(--t1);
+      letter-spacing: -.04em;
+      line-height: 1.15;
+      margin-bottom: .65rem;
+    }
+    .upg-title .hl { color: var(--brand); }
+    .upg-body {
+      font-size: .85rem;
+      color: var(--t3);
+      line-height: 1.75;
+      margin-bottom: 1.8rem;
+      max-width: 360px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .upg-divider {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: 1.6rem;
+    }
+    .upg-divider::before, .upg-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .upg-divider span {
+      font-size: .7rem;
+      font-weight: 600;
+      color: var(--t4);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .upg-steps {
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+      text-align: left;
+      margin-bottom: 1.8rem;
+    }
+    .upg-step {
+      display: flex;
+      align-items: flex-start;
+      gap: .8rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: .75rem 1rem;
+    }
+    .upg-step-num {
+      width: 22px; height: 22px;
+      min-width: 22px;
+      background: var(--brand);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .68rem;
+      font-weight: 800;
+      color: #fff;
+      margin-top: .05rem;
+    }
+    .upg-step-text {
+      font-size: .8rem;
+      color: var(--t2);
+      line-height: 1.5;
+    }
+    .upg-step-text strong { font-weight: 600; color: var(--t1); }
+    .upg-footer {
+      font-size: .75rem;
+      color: var(--t4);
+      line-height: 1.6;
+    }
+    .upg-footer a {
+      color: var(--brand);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .upg-footer a:hover { text-decoration: underline; }
+  </style>
+
+  <div class="upg-card">
+    <!-- Badge -->
+    <div class="upg-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      System Upgraded
+    </div>
+
+    <!-- Icon -->
+    <div class="upg-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2C12 2 5 9 5 14a7 7 0 0 0 14 0c0-5-7-12-7-12z"/>
+        <path d="M12 14v-4M12 18h.01"/>
+      </svg>
+    </div>
+
+    <!-- Heading -->
+    <div class="upg-title">This system has been <span class="hl">upgraded.</span></div>
+
+    <!-- Body copy -->
+    <p class="upg-body">
+      This version of <strong style="color:var(--t1);font-weight:600">Emmanuel's Fuel Tracking System</strong> is no longer active. A newer, improved version is now available. Please contact the site creator to receive your new access link.
+    </p>
+
+    <div class="upg-divider"><span>How to get access</span></div>
+
+    <!-- Steps -->
+    <div class="upg-steps">
+      <div class="upg-step">
+        <div class="upg-step-num">1</div>
+        <div class="upg-step-text"><strong>Contact the site creator</strong> — reach out via your usual channel (WhatsApp, call, or message) to request the new link.</div>
+      </div>
+      <div class="upg-step">
+        <div class="upg-step-num">2</div>
+        <div class="upg-step-text"><strong>Receive your new URL</strong> — the creator will send you the updated site address with your access credentials.</div>
+      </div>
+      <div class="upg-step">
+        <div class="upg-step-num">3</div>
+        <div class="upg-step-text"><strong>Bookmark the new link</strong> — save it and install the updated app on your device for the best experience.</div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="upg-footer">
+      Built &amp; maintained by <a href="https://www.instagram.com/eunographix_studio/" target="_blank" rel="noopener noreferrer">eunographix</a> &nbsp;·&nbsp; © 2026 Emmanuel's Tracking System
+    </div>
+  </div>
+</div>
+
+<script>
+// Show upgrade notice immediately after loading overlay hides
+(function(){
+  var notice = document.getElementById('upgrade-notice');
+  var loading = document.getElementById('loading-overlay');
+  if(!notice) return;
+
+  // Override the hide loading overlay behaviour to show upgrade notice instead
+  window.__showUpgradeNotice = function(){
+    notice.style.display = 'flex';
+    // Hide the login screen entirely
+    var login = document.getElementById('login-screen');
+    if(login) login.style.display = 'none';
+    // Hide the main app shell too (if it exists)
+    var app = document.getElementById('app');
+    if(app) app.style.display = 'none';
+  };
+
+  // Watch for the loading overlay to be hidden
+  var observer = new MutationObserver(function(mutations){
+    mutations.forEach(function(m){
+      if(m.attributeName === 'style'){
+        var el = document.getElementById('loading-overlay');
+        if(el && (el.style.display === 'none' || el.style.display === '')){
+          observer.disconnect();
+          window.__showUpgradeNotice();
+        }
+      }
+    });
+  });
+
+  if(loading){
+    observer.observe(loading, { attributes: true });
+  }
+
+  // Fallback: if loading overlay is already hidden or never shown, show upgrade page after 1.5s
+  setTimeout(function(){
+    if(notice.style.display !== 'flex'){
+      window.__showUpgradeNotice();
+    }
+  }, 1500);
+})();
+</script>
+
 <!-- ══════════════════ LOGIN ══════════════════ -->
 <div id="login-screen" class="login-wrap">
   <div class="login-panel">
